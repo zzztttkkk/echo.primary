@@ -1,11 +1,20 @@
-﻿using echo.primary.logging;
+﻿using echo.primary.core.tcp;
+using echo.primary.logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-var logger = new Logger();
+using var host = new HostBuilder().Build();
 
-logger.AddAppender(new ConsoleAppender("root", Level.TRACE));
+var server = new Server();
+server.Logger.AddAppender(new ConsoleAppender("root", Level.TRACE));
 
-logger.INFO("Hello World", new List<object> { 1, 34, null });
+var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-logger.Flush();
+lifetime.ApplicationStarted.Register(() => { server.Start("127.0.0.1", 8080); });
 
-Environment.Exit(0);
+lifetime.ApplicationStopping.Register(() => {
+	server.Stop();
+});
+
+host.Start();
+host.WaitForShutdown();

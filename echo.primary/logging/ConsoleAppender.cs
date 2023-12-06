@@ -12,7 +12,7 @@ public class ConsoleAppender : IAppender {
 	public IRenderer Renderer { get; }
 
 	public void Append(LogItem log) {
-		Console.Write(Renderer.Render(log));
+		Console.Write(Renderer.Render(Name, log));
 	}
 
 	public void Flush() {

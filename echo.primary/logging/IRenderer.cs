@@ -1,5 +1,5 @@
 ﻿namespace echo.primary.logging;
 
 public interface IRenderer {
-	string Render(LogItem log);
+	string Render(string loggername, LogItem log);
 }

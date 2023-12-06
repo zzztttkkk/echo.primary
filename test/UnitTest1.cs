@@ -1,4 +1,5 @@
 using echo.primary.core.tcp;
+using echo.primary.logging;
 
 namespace test;
 
@@ -14,9 +15,8 @@ public class Tests {
 
 	[Test]
 	public void Test1() {
-		var logger = NLog.LogManager.GetLogger("root");
-
-		Server server = new(logger);
+		var logger = new Logger().AddAppender(new ConsoleAppender("", Level.TRACE));
+		Server server = new(logger, new SocketOptions());
 
 		var stop = false;
 
