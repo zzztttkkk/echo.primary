@@ -44,7 +44,7 @@ public class Server : IDisposable {
 	protected ConcurrentDictionary<Connection, byte> Connections = new();
 
 	private void OnAccept(Socket sock) {
-		Logger.Info($"{sock.RemoteEndPoint}");
+		Logger.Info($"{sock.RemoteEndPoint} {Environment.CurrentManagedThreadId}");
 
 		if (SocketOptions.KeepAlive) {
 			sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -71,6 +71,8 @@ public class Server : IDisposable {
 		if (SocketOptions.NoDelay) {
 			sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
 		}
+
+		sock.Close();
 	}
 
 	private Socket? _sock;
