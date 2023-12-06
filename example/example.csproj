@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="NetCoreServer" Version="8.0.3" />
-      <PackageReference Include="NLog.Extensions.Logging" Version="5.3.5" />
+      <ProjectReference Include="..\echo.primary\echo.primary.csproj" />
     </ItemGroup>
 
 </Project>
