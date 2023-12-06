@@ -14,11 +14,11 @@ public record ColorOptions(
 );
 
 public class SimpleLineRenderer : IRenderer {
-	public string Render(string loggername, LogItem log) {
+	public string Render(string name, LogItem log) {
 		StringBuilder builder = new();
 
 		// loggerName
-		builder.Append($"[{loggername}] ");
+		builder.Append($"[{name}] ");
 
 		// time
 		builder.Append($"[{log.time}] ");

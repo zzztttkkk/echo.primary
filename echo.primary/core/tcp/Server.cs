@@ -1,40 +1,30 @@
-﻿using echo.primary.logging;
+﻿using System.Collections.Concurrent;
+using echo.primary.logging;
 
 namespace echo.primary.core.tcp;
 
 using System.Net;
 using System.Net.Sockets;
 
-public record SocketOptions(
-	bool ReuseAddress = false,
-	bool ExclusiveAddressUse = false,
-	bool DualMode = false,
-	int Backlog = 128
-);
-
 public delegate void BeforeTcpServerListenHandler();
 
 public delegate void BeforeTcpServerShutdownHandler();
 
 public class Server : IDisposable {
-	public SocketOptions SocketOptions { get; }
-	public Logger Logger { get; }
+	public SocketOptions SocketOptions { get; } = new();
+	public Logger Logger { get; } = new();
 
-	public string Name { get; }
+	public string Name { get; } = "TcpServer";
 
 	public Server() : this("TcpServer") {
 	}
 
 	public Server(string name) {
 		Name = name;
-		Logger = new Logger();
-		SocketOptions = new SocketOptions();
 	}
 
-	public Server(Logger logger) {
-		Name = "TcpServer";
-		Logger = logger;
-		SocketOptions = new SocketOptions();
+	public Server(SocketOptions options) {
+		SocketOptions = options;
 	}
 
 	private readonly List<BeforeTcpServerListenHandler> _beforeTcpServerListenHandlers = new();
@@ -51,14 +41,41 @@ public class Server : IDisposable {
 		remove => _beforeTcpServerShutdownHandlers.Remove(value);
 	}
 
-	protected void OnAccept(Socket sock) {
+	protected ConcurrentDictionary<Connection, byte> Connections = new();
+
+	private void OnAccept(Socket sock) {
 		Logger.Info($"{sock.RemoteEndPoint}");
-		sock.Close();
+
+		if (SocketOptions.KeepAlive) {
+			sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+		}
+
+		if (SocketOptions.KeepAliveTime > 0) {
+			sock.SetSocketOption(
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveTime, SocketOptions.KeepAliveTime
+			);
+		}
+
+		if (SocketOptions.KeepAliveInterval > 0) {
+			sock.SetSocketOption(
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveInterval, SocketOptions.KeepAliveInterval
+			);
+		}
+
+		if (SocketOptions.KeepAliveRetryCount > 0) {
+			sock.SetSocketOption(
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveRetryCount, SocketOptions.KeepAliveRetryCount
+			);
+		}
+
+		if (SocketOptions.NoDelay) {
+			sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
+		}
 	}
 
-
-	private Socket? _sock = null;
-	private SocketAsyncEventArgs? _sockAsyncEventArgs = null;
+	private Socket? _sock;
+	private SocketAsyncEventArgs? _sockAsyncEventArgs;
+	private bool _stopping;
 
 	public void Start(string addr, ushort port) {
 		var endpint = new IPEndPoint(IPAddress.Parse(addr), port);
@@ -81,22 +98,25 @@ public class Server : IDisposable {
 
 		_sock = sock;
 		sock.Listen(SocketOptions.Backlog);
-		Logger.Info($"HttpServer is listening @ {addr}:{port}, pid: {Environment.ProcessId}");
+		Logger.Info($"{Name} is listening @ {addr}:{port}, pid: {Environment.ProcessId}");
+		_stopping = false;
 
 		_sockAsyncEventArgs = new SocketAsyncEventArgs();
-		_sockAsyncEventArgs.Completed += (sender, evt) => ProcessAccecpt();
+		_sockAsyncEventArgs.Completed += (sender, evt) => ProcessAccept();
 
 		StartAccept();
 	}
 
 	private void StartAccept() {
+		if (_stopping) return;
+
 		_sockAsyncEventArgs!.AcceptSocket = null;
 		if (!_sock!.AcceptAsync(_sockAsyncEventArgs!)) {
-			ProcessAccecpt();
+			ProcessAccept();
 		}
 	}
 
-	private void ProcessAccecpt() {
+	private void ProcessAccept() {
 		var err = _sockAsyncEventArgs!.SocketError;
 		switch (err) {
 			case SocketError.Success: {
@@ -124,9 +144,11 @@ public class Server : IDisposable {
 	}
 
 	public void Stop() {
-		if (_sock == null) return;
+		if (_sock == null || _stopping) return;
 
-		Logger.Info("");
+		_stopping = true;
+
+		Logger.Info($"{Name} is stopping");
 
 		foreach (var val in _beforeTcpServerShutdownHandlers) {
 			val();
