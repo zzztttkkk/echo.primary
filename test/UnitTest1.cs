@@ -1,5 +1,4 @@
-using echo.primary.core.tcp;
-using echo.primary.logging;
+using echo.primary.core.net;
 
 namespace test;
 

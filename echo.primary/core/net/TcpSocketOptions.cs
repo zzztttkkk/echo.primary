@@ -1,6 +1,6 @@
 ﻿using System.Security.Authentication;
 
-namespace echo.primary.core.tcp;
+namespace echo.primary.core.net;
 
 public record SslOptions(
 	string Filename,

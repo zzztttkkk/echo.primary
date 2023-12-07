@@ -1,4 +1,4 @@
-﻿namespace echo.primary.core.tcp;
+﻿namespace echo.primary.core.net;
 
 public interface ITcpProtocol {
 	void ConnectionMade(TcpConnection conn);

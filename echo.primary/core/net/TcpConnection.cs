@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace echo.primary.core.tcp;
+namespace echo.primary.core.net;
 
 public class TcpConnection : IDisposable {
 	protected TcpServer _server;

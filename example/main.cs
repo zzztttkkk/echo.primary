@@ -1,4 +1,4 @@
-﻿using echo.primary.core.tcp;
+﻿using echo.primary.core.net;
 using echo.primary.logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

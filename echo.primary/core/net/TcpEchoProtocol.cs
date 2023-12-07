@@ -1,4 +1,4 @@
-﻿namespace echo.primary.core.tcp;
+﻿namespace echo.primary.core.net;
 
 public class TcpEchoProtocol : ITcpProtocol {
 	private TcpConnection _connection;

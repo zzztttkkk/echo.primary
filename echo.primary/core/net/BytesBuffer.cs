@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace echo.primary.core.tcp;
+namespace echo.primary.core.net;
 
 public class BytesBuffer {
 	private byte[] _data;

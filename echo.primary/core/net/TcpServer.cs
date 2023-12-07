@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using echo.primary.logging;
 
-namespace echo.primary.core.tcp;
+namespace echo.primary.core.net;
 
 using System.Net;
 using System.Net.Sockets;
