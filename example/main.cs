@@ -5,12 +5,31 @@ using Microsoft.Extensions.Hosting;
 
 using var host = new HostBuilder().Build();
 
-var server = new TcpServer();
+/*
+ * mkcert dev.local
+ * openssl pkcs12 -in ./dev.local.pem -inkey ./dev.local-key.pem --export -out ./dev.local.pfx
+ * rm ./*.pem
+ */
+var opts = new TcpSocketOptions(
+	SslOptions: new SslOptions("../../../dev.local.pfx", Password: "123456")
+);
+
+var server = new TcpServer(opts);
 server.Logger.AddAppender(new ConsoleAppender(""));
 
 var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-lifetime.ApplicationStarted.Register(() => { _ = server.Start("0.0.0.0", 8080, () => new TcpEchoProtocol()); });
+lifetime.ApplicationStarted.Register(() => {
+	server.Start(
+		"0.0.0.0", 8080, () => new TcpEchoProtocol()
+	).ContinueWith(
+		t => {
+			if (t.Exception != null) {
+				server.Logger.Error($"{t.Exception}");
+			}
+		}
+	);
+});
 
 lifetime.ApplicationStopping.Register(() => { server.Stop(); });
 
