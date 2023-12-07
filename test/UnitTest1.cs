@@ -10,9 +10,12 @@ public class Tests {
 
 	[Test]
 	public void Test1() {
-		var buf = new BytesBuffer();
-		buf.Write("hello world");
+		var a = new byte[10];
+		for (var i = 0; i < a.Length; i++) {
+			a[i] = 97;
+		}
 
-		Console.WriteLine($"{buf.Size} {buf.Capacity} {buf.Offset}");
+		var mv = new Memory<byte>(a, 0, 10);
+		Console.WriteLine($"{mv}");
 	}
 }

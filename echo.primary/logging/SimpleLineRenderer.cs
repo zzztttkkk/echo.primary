@@ -14,6 +14,8 @@ public record ColorOptions(
 );
 
 public class SimpleLineRenderer : IRenderer {
+	public string TimeLayout { get; set; } = "yyyy-MM-dd HH:mm:ss.fff/z";
+
 	public string Render(string name, LogItem log) {
 		StringBuilder builder = new();
 
@@ -21,7 +23,7 @@ public class SimpleLineRenderer : IRenderer {
 		builder.Append($"[{name}] ");
 
 		// time
-		builder.Append($"[{log.time}] ");
+		builder.Append($"[{log.time.ToString(TimeLayout)}] ");
 
 		// level
 		builder.Append($"[{log.level}] ");

@@ -10,7 +10,7 @@ server.Logger.AddAppender(new ConsoleAppender(""));
 
 var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-lifetime.ApplicationStarted.Register(() => { server.Start("127.0.0.1", 8080).Start(); });
+lifetime.ApplicationStarted.Register(() => { _ = server.Start("0.0.0.0", 8080, () => new TcpEchoProtocol()); });
 
 lifetime.ApplicationStopping.Register(() => { server.Stop(); });
 

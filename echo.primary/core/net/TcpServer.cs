@@ -10,6 +10,10 @@ public delegate void BeforeTcpServerListenHandler();
 
 public delegate void BeforeTcpServerShutdownHandler();
 
+public delegate ITcpProtocol TcpProtocolConstructor();
+
+delegate void OnAcceptFunc(Socket sock, TcpProtocolConstructor constructor);
+
 public class TcpServer : IDisposable {
 	public TcpSocketOptions TcpSocketOptions { get; } = new();
 	public Logger Logger { get; } = new();
@@ -41,20 +45,42 @@ public class TcpServer : IDisposable {
 		remove => _beforeTcpServerShutdownHandlers.Remove(value);
 	}
 
-	protected ConcurrentDictionary<TcpConnection, byte> Connections = new();
+	protected readonly ConcurrentDictionary<TcpConnection, byte> Connections = new();
 
-	private async Task OnAccept(Socket sock) {
-		Connections[new TcpConnection(this, sock, TcpSocketOptions)] = 1;
+	private void OnAccept(Socket sock, TcpProtocolConstructor constructor) {
+		if (_stopped) {
+			sock.Close();
+			return;
+		}
+
+		var conn = new TcpConnection(this, sock);
+		Connections[conn] = 1;
+		conn.Run(TcpSocketOptions, constructor());
+	}
+
+	private void OnAcceptSsl(Socket sock, TcpProtocolConstructor constructor) {
+		if (_stopped) {
+			sock.Close();
+			return;
+		}
+
+		var conn = new TcpConnection(this, sock);
+		Connections[conn] = 1;
+		conn.RunSsl(TcpSocketOptions, TcpSocketOptions.SslOptions!, constructor());
 	}
 
 	public void Disconnect(TcpConnection connection) {
+		if (_stopped) return;
 		Connections.TryRemove(connection, out _);
 	}
 
 	private Socket? _sock;
 	private bool _stopped;
 
-	public async Task Start(string addr, ushort port) {
+	public async Task Start(string addr, ushort port, TcpProtocolConstructor constructor) {
+		TcpSocketOptions.SslOptions?.Load();
+		OnAcceptFunc DoAccept = TcpSocketOptions.SslOptions == null ? OnAccept : OnAcceptSsl;
+
 		var endpint = new IPEndPoint(IPAddress.Parse(addr), port);
 
 		var sock = new Socket(endpint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -80,7 +106,7 @@ public class TcpServer : IDisposable {
 
 		while (!_stopped) {
 			try {
-				OnAccept(await sock.AcceptAsync()).Start();
+				DoAccept(await sock.AcceptAsync(), constructor);
 			}
 			catch (SocketException e) {
 				switch (e.SocketErrorCode) {
@@ -101,15 +127,18 @@ public class TcpServer : IDisposable {
 	}
 
 	protected void OnError(SocketException error) {
-		Logger.Debug($"{error}");
+		Logger.Debug($"{error.SocketErrorCode} ---------- {error}");
 	}
 
 	public void Stop() {
 		if (_sock == null || _stopped) return;
-
 		_stopped = true;
 
 		Logger.Info($"{Name} is stopping");
+
+		foreach (var conn in Connections.Keys) {
+			conn.Close();
+		}
 
 		foreach (var val in _beforeTcpServerShutdownHandlers) {
 			val();

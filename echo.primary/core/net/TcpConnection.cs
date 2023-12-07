@@ -1,46 +1,118 @@
-﻿using System.Net.Sockets;
+﻿using System.Net.Security;
+using System.Net.Sockets;
+using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
 public class TcpConnection : IDisposable {
-	protected TcpServer _server;
-	protected TcpSocketOptions _options;
+	private readonly TcpServer _server;
+	private SslStream? _sslStream;
 	private byte[] _rbuf;
 	private readonly LinkedList<byte[]> _wbufs = new();
 	private TaskCompletionSource? _wpromise;
-	private bool _closed = false;
+	private bool _closed;
+	private ITcpProtocol? _protocol = null;
 
-	private void OnAsyncCompleted(object? sender, SocketAsyncEventArgs e) {
-	}
+	public Logger Logger => _server.Logger;
 
-	public TcpConnection(TcpServer server, Socket socket, TcpSocketOptions options) {
+	public TcpConnection(TcpServer server, Socket socket) {
 		_server = server;
 		Socket = socket;
-		_options = options;
 	}
 
 	public Socket Socket { get; }
 
-	private async Task ReadTask(ITcpProtocol protocol) {
+
+	private async Task DoRead() {
 		while (!_closed) {
-			var len = await Socket.ReceiveAsync(_rbuf);
-			protocol.DataReceived(_rbuf, len);
+			int len;
+			try {
+				len = await Socket.ReceiveAsync(_rbuf);
+			}
+			catch (Exception e) {
+				Close(e);
+				return;
+			}
+
+			if (len < 1) break;
+			_protocol!.DataReceived(_rbuf, len);
 		}
+
+		Close();
 	}
 
-	private async Task WriteTask() {
+	private async Task DoReadOverSsl() {
+		while (!_closed) {
+			int len;
+			try {
+				len = await _sslStream!.ReadAsync(_rbuf);
+			}
+			catch (Exception e) {
+				Close(e);
+				return;
+			}
+
+			if (len < 1) break;
+			_protocol!.DataReceived(_rbuf, len);
+		}
+
+		Close();
+	}
+
+	private async Task DoWrite() {
 		while (!_closed) {
 			if (_wbufs.Count < 1) {
 				_wpromise ??= new();
 				await _wpromise.Task;
+				_wpromise = null;
+				if (_closed) break;
 			}
 
 			var first = _wbufs.First;
 			var buf = first!.Value;
 			_wbufs.RemoveFirst();
 
-			await Socket.SendAsync(buf);
+			try {
+				await Socket.SendAsync(buf);
+			}
+			catch (Exception e) {
+				Close(e);
+				return;
+			}
 		}
+	}
+
+	private async Task DoWriteOverSsl() {
+		while (!_closed) {
+			if (_wbufs.Count < 1) {
+				_wpromise ??= new();
+				await _wpromise.Task;
+				_wpromise = null;
+				if (_closed) break;
+			}
+
+			var first = _wbufs.First;
+			var buf = first!.Value;
+			_wbufs.RemoveFirst();
+
+			try {
+				await _sslStream!.WriteAsync(buf);
+			}
+			catch (Exception e) {
+				Close(e);
+				return;
+			}
+		}
+	}
+
+	private void LaunchRWTasks() {
+		_ = DoRead();
+		_ = DoWrite();
+	}
+
+	private void LaunchSslRWTasks() {
+		_ = DoReadOverSsl();
+		_ = DoWriteOverSsl();
 	}
 
 	public void Write(byte[] buf) {
@@ -48,65 +120,98 @@ public class TcpConnection : IDisposable {
 		_wpromise?.SetResult();
 	}
 
-	public void Run(ITcpProtocol protocol) {
-		applyOptions();
-		ReadTask(protocol).Start();
-		WriteTask().Start();
+	private async Task SslHandshake(SslOptions opts) {
+		_sslStream = opts.RemoteCertificateValidationCallback != null
+			? new SslStream(
+				new NetworkStream(Socket, false), false, opts.RemoteCertificateValidationCallback
+			)
+			: new SslStream(
+				new NetworkStream(Socket, false), false
+			);
 
-		if (_options.SslOptions == null) {
-		}
+		TaskCompletionSource<IAsyncResult> ps = new();
+		_sslStream.BeginAuthenticateAsServer(
+			opts.Certificate,
+			opts.ClientCertificateRequired,
+			opts.Protocols,
+			false,
+			(v) => { ps.SetResult(v); },
+			null
+		);
+		var result = await ps.Task;
+		if (_closed) return;
+
+		_sslStream.EndAuthenticateAsServer(result);
+		_protocol!.ConnectionMade(this);
+		LaunchSslRWTasks();
 	}
 
-	private void applyOptions() {
-		if (_options.KeepAlive) {
+	public void Run(TcpSocketOptions opts, ITcpProtocol protocol) {
+		_protocol = protocol;
+		ApplyOptions(opts);
+		protocol.ConnectionMade(this);
+		LaunchRWTasks();
+	}
+
+	public void RunSsl(TcpSocketOptions sockOpts, SslOptions sslOptions, ITcpProtocol protocol) {
+		_protocol = protocol;
+		ApplyOptions(sockOpts);
+		_ = SslHandshake(sslOptions);
+	}
+
+	private void ApplyOptions(TcpSocketOptions opts) {
+		if (opts.KeepAlive) {
 			Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 		}
 
-		if (_options.KeepAliveTime > 0) {
+		if (opts.KeepAliveTime > 0) {
 			Socket.SetSocketOption(
-				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveTime, _options.KeepAliveTime
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveTime, opts.KeepAliveTime
 			);
 		}
 
-		if (_options.KeepAliveInterval > 0) {
+		if (opts.KeepAliveInterval > 0) {
 			Socket.SetSocketOption(
-				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveInterval, _options.KeepAliveInterval
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveInterval, opts.KeepAliveInterval
 			);
 		}
 
-		if (_options.KeepAliveRetryCount > 0) {
+		if (opts.KeepAliveRetryCount > 0) {
 			Socket.SetSocketOption(
-				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveRetryCount, _options.KeepAliveRetryCount
+				SocketOptionLevel.Socket, SocketOptionName.TcpKeepAliveRetryCount, opts.KeepAliveRetryCount
 			);
 		}
 
-		if (_options.NoDelay) {
+		if (opts.NoDelay) {
 			Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
 		}
 
-		Socket.ReceiveBufferSize = (int)_options.ReceiveBufferSize;
-		Socket.SendBufferSize = (int)_options.SendBufferSize;
-		_rbuf = new byte[_options.ReceiveBufferSize];
+		Socket.ReceiveBufferSize = (int)opts.ReceiveBufferSize;
+		Socket.SendBufferSize = (int)opts.SendBufferSize;
+		_rbuf = new byte[opts.ReceiveBufferSize];
 	}
 
-	public void Close() {
+	public void Close(Exception? exception = null) {
 		if (_closed) return;
 		_closed = true;
 
+		_protocol?.ConnectionLost(exception);
+
+		_wpromise?.SetResult();
+		_wbufs.Clear();
 
 		_server.Disconnect(this);
 
 		try {
-			try {
-				Socket.Shutdown(SocketShutdown.Both);
-			}
-			catch (SocketException) {
-			}
+			_sslStream?.ShutdownAsync().Wait();
+			Socket.Shutdown(SocketShutdown.Both);
+			_sslStream?.Dispose();
 
 			Socket.Close();
 			Socket.Dispose();
 		}
-		catch (ObjectDisposedException) {
+		catch (Exception) {
+			// ignored
 		}
 	}
 
