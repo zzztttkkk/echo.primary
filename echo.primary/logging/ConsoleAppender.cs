@@ -1,7 +1,7 @@
 ﻿namespace echo.primary.logging;
 
 public class ConsoleAppender : IAppender {
-	public ConsoleAppender(string name, Level level, IRenderer? renderer = null) {
+	public ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? renderer = null) {
 		Level = level;
 		Name = name;
 		Renderer = renderer ?? new SimpleLineRenderer();

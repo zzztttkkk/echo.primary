@@ -8,12 +8,12 @@ public class Tests {
 	public void Setup() {
 	}
 
-	private static async Task sleep(int idx) {
-		await Task.Delay(3000);
-		Console.WriteLine($"{idx}: {Environment.CurrentManagedThreadId}");
-	}
 
 	[Test]
 	public void Test1() {
+		var buf = new BytesBuffer();
+		buf.Write("hello world");
+
+		Console.WriteLine($"{buf.Size} {buf.Capacity} {buf.Offset}");
 	}
 }

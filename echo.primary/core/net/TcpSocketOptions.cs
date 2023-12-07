@@ -8,7 +8,7 @@ public record SslOptions(
 	SslProtocols? Protocols = null
 );
 
-public record SocketOptions(
+public record TcpSocketOptions(
 	bool ReuseAddress = false,
 	bool ExclusiveAddressUse = false,
 	bool DualMode = false,
