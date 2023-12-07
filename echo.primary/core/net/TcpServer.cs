@@ -101,7 +101,9 @@ public class TcpServer : IDisposable {
 
 		_sock = sock;
 		sock.Listen(TcpSocketOptions.Backlog);
-		Logger.Info($"{Name} is listening @ {addr}:{port}, pid: {Environment.ProcessId}");
+		Logger.Info(
+			$"{Name} is listening @ {addr}:{port}, ssl: {TcpSocketOptions.SslOptions != null}, pid: {Environment.ProcessId}"
+		);
 		_stopped = false;
 
 		while (!_stopped) {

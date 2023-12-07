@@ -4,24 +4,15 @@ using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
-public class TcpConnection : IDisposable {
-	private readonly TcpServer _server;
+public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 	private SslStream? _sslStream;
-	private byte[] _rbuf;
+	private byte[] _rbuf = null!;
 	private readonly LinkedList<byte[]> _wbufs = new();
 	private TaskCompletionSource? _wpromise;
 	private bool _closed;
-	private ITcpProtocol? _protocol = null;
-
-	public Logger Logger => _server.Logger;
-
-	public TcpConnection(TcpServer server, Socket socket) {
-		_server = server;
-		Socket = socket;
-	}
-
-	public Socket Socket { get; }
-
+	private ITcpProtocol? _protocol;
+	public Logger Logger => server.Logger;
+	public Socket Socket { get; } = socket;
 
 	private async Task DoRead() {
 		while (!_closed) {
@@ -120,7 +111,11 @@ public class TcpConnection : IDisposable {
 		_wpromise?.SetResult();
 	}
 
-	private async Task SslHandshake(SslOptions opts) {
+	public void Flush() {
+		_wpromise?.SetResult();
+	}
+
+	private async Task SslHandshake(SslOptions opts, ITcpProtocol protocol) {
 		_sslStream = opts.RemoteCertificateValidationCallback != null
 			? new SslStream(
 				new NetworkStream(Socket, false), false, opts.RemoteCertificateValidationCallback
@@ -141,8 +136,17 @@ public class TcpConnection : IDisposable {
 		var result = await ps.Task;
 		if (_closed) return;
 
-		_sslStream.EndAuthenticateAsServer(result);
-		_protocol!.ConnectionMade(this);
+		try {
+			_sslStream.EndAuthenticateAsServer(result);
+		}
+		catch (Exception e) {
+			server.Logger.Debug($"SslHandshakeFailed: {Socket.RemoteEndPoint} {e.Message}");
+			Close(e);
+			return;
+		}
+
+		_protocol = protocol;
+		_protocol.ConnectionMade(this);
 		LaunchSslRWTasks();
 	}
 
@@ -154,9 +158,12 @@ public class TcpConnection : IDisposable {
 	}
 
 	public void RunSsl(TcpSocketOptions sockOpts, SslOptions sslOptions, ITcpProtocol protocol) {
-		_protocol = protocol;
 		ApplyOptions(sockOpts);
-		_ = SslHandshake(sslOptions);
+		SslHandshake(sslOptions, protocol).ContinueWith(t => {
+			if (t.Exception == null) return;
+			server.Logger.Error($"{t.Exception}");
+			Close(t.Exception);
+		});
 	}
 
 	private void ApplyOptions(TcpSocketOptions opts) {
@@ -200,17 +207,15 @@ public class TcpConnection : IDisposable {
 		_wpromise?.SetResult();
 		_wbufs.Clear();
 
-		_server.Disconnect(this);
+		server.Disconnect(this);
 
 		try {
-			_sslStream?.ShutdownAsync().Wait();
-			Socket.Shutdown(SocketShutdown.Both);
+			_sslStream?.Close();
 			_sslStream?.Dispose();
-
 			Socket.Close();
 			Socket.Dispose();
 		}
-		catch (Exception) {
+		catch (Exception e) {
 			// ignored
 		}
 	}

@@ -7,7 +7,7 @@ namespace echo.primary.core.net;
 public record SslOptions(
 	string Filename,
 	string? Password = null,
-	SslProtocols Protocols = SslProtocols.Tls13,
+	SslProtocols Protocols = SslProtocols.None,
 	RemoteCertificateValidationCallback? RemoteCertificateValidationCallback = null,
 	bool ClientCertificateRequired = false
 ) {
