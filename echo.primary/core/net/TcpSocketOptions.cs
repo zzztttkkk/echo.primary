@@ -9,7 +9,8 @@ public record SslOptions(
 	string? Password = null,
 	SslProtocols Protocols = SslProtocols.None,
 	RemoteCertificateValidationCallback? RemoteCertificateValidationCallback = null,
-	bool ClientCertificateRequired = false
+	bool ClientCertificateRequired = false,
+	int HandshakeTimeoutMills = 0
 ) {
 	private X509Certificate2? _certificate2;
 	public X509Certificate2 Certificate => _certificate2 ??= new X509Certificate2(Filename, Password);
@@ -29,7 +30,6 @@ public record TcpSocketOptions(
 	int KeepAliveInterval = 0,
 	int KeepAliveRetryCount = 0,
 	bool NoDelay = false,
-	uint ReceiveBufferSize = 10240,
-	uint SendBufferSize = 10240,
+	uint BufferSize = 8192,
 	SslOptions? SslOptions = null
 );

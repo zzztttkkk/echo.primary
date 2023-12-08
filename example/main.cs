@@ -11,7 +11,7 @@ using var host = new HostBuilder().Build();
  * rm ./*.pem
  */
 var opts = new TcpSocketOptions(
-	SslOptions: new SslOptions("./dev.local.pfx", Password: "123456")
+	// SslOptions: new SslOptions("./dev.local.pfx", Password: "123456")
 );
 
 var server = new TcpServer(opts);

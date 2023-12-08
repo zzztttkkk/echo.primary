@@ -6,10 +6,6 @@ namespace echo.primary.core.net;
 using System.Net;
 using System.Net.Sockets;
 
-public delegate void BeforeTcpServerListenHandler();
-
-public delegate void BeforeTcpServerShutdownHandler();
-
 public delegate ITcpProtocol TcpProtocolConstructor();
 
 delegate void OnAcceptFunc(Socket sock, TcpProtocolConstructor constructor);
@@ -31,16 +27,21 @@ public class TcpServer : IDisposable {
 		TcpSocketOptions = options;
 	}
 
-	private readonly List<BeforeTcpServerListenHandler> _beforeTcpServerListenHandlers = new();
+	public TcpServer(string name, TcpSocketOptions options) {
+		Name = name;
+		TcpSocketOptions = options;
+	}
 
-	public event BeforeTcpServerListenHandler BeforeListen {
+	private readonly List<Action> _beforeTcpServerListenHandlers = new();
+
+	public event Action BeforeListen {
 		add => _beforeTcpServerListenHandlers.Add(value);
 		remove => _beforeTcpServerListenHandlers.Remove(value);
 	}
 
-	private readonly List<BeforeTcpServerShutdownHandler> _beforeTcpServerShutdownHandlers = new();
+	private readonly List<Action> _beforeTcpServerShutdownHandlers = new();
 
-	public event BeforeTcpServerShutdownHandler BeforeShutdown {
+	public event Action BeforeShutdown {
 		add => _beforeTcpServerShutdownHandlers.Add(value);
 		remove => _beforeTcpServerShutdownHandlers.Remove(value);
 	}

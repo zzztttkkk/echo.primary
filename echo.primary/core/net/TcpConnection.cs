@@ -6,113 +6,101 @@ namespace echo.primary.core.net;
 
 public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 	private SslStream? _sslStream;
-	private byte[] _rbuf = null!;
-	private readonly LinkedList<byte[]> _wbufs = new();
-	private TaskCompletionSource? _wpromise;
 	private bool _closed;
 	private ITcpProtocol? _protocol;
+	private BufferedStream? _stream;
+
 	public Logger Logger => server.Logger;
 	public Socket Socket { get; } = socket;
 
-	private async Task DoRead() {
-		while (!_closed) {
-			int len;
-			try {
-				len = await Socket.ReceiveAsync(_rbuf);
-			}
-			catch (Exception e) {
-				Close(e);
-				return;
-			}
+	public bool Alive => !_closed && Socket.Connected;
 
-			if (len < 1) break;
-			_protocol!.DataReceived(_rbuf, len);
-		}
-
-		Close();
+	public async Task Write(byte[] v) {
+		if (_closed || _stream == null) return;
+		await _stream.WriteAsync(v);
 	}
 
-	private async Task DoReadOverSsl() {
-		while (!_closed) {
-			int len;
-			try {
-				len = await _sslStream!.ReadAsync(_rbuf);
-			}
-			catch (Exception e) {
-				Close(e);
-				return;
-			}
-
-			if (len < 1) break;
-			_protocol!.DataReceived(_rbuf, len);
-		}
-
-		Close();
+	public Task Flush() {
+		if (_closed || _stream == null) return Task.CompletedTask;
+		return _stream.FlushAsync();
 	}
 
-	private async Task DoWrite() {
-		while (!_closed) {
-			if (_wbufs.Count < 1) {
-				_wpromise ??= new();
-				await _wpromise.Task;
-				_wpromise = null;
-				if (_closed) break;
-			}
-
-			var first = _wbufs.First;
-			var buf = first!.Value;
-			_wbufs.RemoveFirst();
-
-			try {
-				await Socket.SendAsync(buf);
-			}
-			catch (Exception e) {
-				Close(e);
-				return;
-			}
+	public async Task<int> Read(byte[] buf) {
+		if (_closed || _stream == null) return -1;
+		try {
+			return await _stream.ReadAsync(buf);
+		}
+		catch (Exception e) {
+			Close(e);
+			return -1;
 		}
 	}
 
-	private async Task DoWriteOverSsl() {
-		while (!_closed) {
-			if (_wbufs.Count < 1) {
-				_wpromise ??= new();
-				await _wpromise.Task;
-				_wpromise = null;
-				if (_closed) break;
-			}
+	public async Task<int> Read(byte[] buf, int timeoutmills) {
+		if (_closed || _stream == null) return -1;
+		if (timeoutmills < 0) {
+			return await Read(buf);
+		}
 
-			var first = _wbufs.First;
-			var buf = first!.Value;
-			_wbufs.RemoveFirst();
+		var cts = new CancellationTokenSource();
+		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
+		_ = Task.Delay(timeoutmills).ContinueWith(t => { cts.Cancel(); });
 
-			try {
-				await _sslStream!.WriteAsync(buf);
-			}
-			catch (Exception e) {
-				Close(e);
-				return;
-			}
+		try {
+			return await _stream.ReadAsync(buf, cts.Token);
+		}
+		catch (Exception e) {
+			Close(e);
+			return -1;
+		}
+		finally {
+			cts.Dispose();
 		}
 	}
 
-	private void LaunchRWTasks() {
-		_ = DoRead();
-		_ = DoWrite();
+	public async Task<bool> ReadExactly(byte[] buf) {
+		if (_closed || _stream == null) return false;
+		await _stream.ReadExactlyAsync(buf);
+		return true;
 	}
 
-	private void LaunchSslRWTasks() {
-		_ = DoReadOverSsl();
-		_ = DoWriteOverSsl();
+	public async Task<bool> ReadExactly(byte[] buf, int timeoutmills) {
+		if (_closed || _stream == null) return false;
+		if (timeoutmills < 1) return await ReadExactly(buf);
+
+		var cts = new CancellationTokenSource();
+		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
+		_ = Task.Delay(timeoutmills).ContinueWith(t => { cts.Cancel(); });
+
+		try {
+			await _stream.ReadExactlyAsync(buf, cts.Token);
+			return true;
+		}
+		catch (Exception e) {
+			Close(e);
+			return false;
+		}
+		finally {
+			cts.Dispose();
+		}
 	}
 
-	public void Write(byte[] buf) {
-		_wbufs.AddLast(buf);
-		_wpromise?.SetResult();
+	public async Task<byte?> ReadOne() {
+		var buf = new byte[1];
+		if (!await ReadExactly(buf)) {
+			return null;
+		}
+
+		return buf[0];
 	}
 
-	public void Flush() {
-		_wpromise?.SetResult();
+	public async Task<byte?> ReadOne(int timeoutmills) {
+		var buf = new byte[1];
+		if (!await ReadExactly(buf, timeoutmills)) {
+			return null;
+		}
+
+		return buf[0];
 	}
 
 	private async Task SslHandshake(SslOptions opts, ITcpProtocol protocol) {
@@ -124,16 +112,25 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 				new NetworkStream(Socket, false), false
 			);
 
-		TaskCompletionSource<IAsyncResult> ps = new();
+		TaskCompletionSource<IAsyncResult> tcs = new();
 		_sslStream.BeginAuthenticateAsServer(
 			opts.Certificate,
 			opts.ClientCertificateRequired,
 			opts.Protocols,
 			false,
-			(v) => { ps.SetResult(v); },
+			(v) => { tcs.SetResult(v); },
 			null
 		);
-		var result = await ps.Task;
+
+		if (opts.HandshakeTimeoutMills > 0) {
+			_ = Task.Delay(opts.HandshakeTimeoutMills).ContinueWith(t => {
+				if (tcs.Task.IsCompleted) return;
+				tcs.SetCanceled();
+			});
+		}
+
+		var result = await tcs.Task;
+
 		if (_closed) return;
 
 		try {
@@ -145,16 +142,16 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 			return;
 		}
 
+		_stream = new BufferedStream(_sslStream, Socket.SendBufferSize);
 		_protocol = protocol;
 		_protocol.ConnectionMade(this);
-		LaunchSslRWTasks();
 	}
 
 	public void Run(TcpSocketOptions opts, ITcpProtocol protocol) {
 		_protocol = protocol;
 		ApplyOptions(opts);
+		_stream = new BufferedStream(new NetworkStream(Socket), (int)opts.BufferSize);
 		protocol.ConnectionMade(this);
-		LaunchRWTasks();
 	}
 
 	public void RunSsl(TcpSocketOptions sockOpts, SslOptions sslOptions, ITcpProtocol protocol) {
@@ -193,9 +190,8 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 			Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
 		}
 
-		Socket.ReceiveBufferSize = (int)opts.ReceiveBufferSize;
-		Socket.SendBufferSize = (int)opts.SendBufferSize;
-		_rbuf = new byte[opts.ReceiveBufferSize];
+		Socket.ReceiveBufferSize = (int)opts.BufferSize;
+		Socket.SendBufferSize = (int)opts.BufferSize;
 	}
 
 	public void Close(Exception? exception = null) {
@@ -203,19 +199,28 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 		_closed = true;
 
 		_protocol?.ConnectionLost(exception);
-
-		_wpromise?.SetResult();
-		_wbufs.Clear();
-
 		server.Disconnect(this);
 
 		try {
+			_protocol?.Dispose();
+
+			_stream?.Close();
+			_stream?.Dispose();
+
 			_sslStream?.Close();
 			_sslStream?.Dispose();
+
+			try {
+				Socket.Shutdown(SocketShutdown.Both);
+			}
+			catch (SocketException) {
+				// ignored
+			}
+
 			Socket.Close();
 			Socket.Dispose();
 		}
-		catch (Exception e) {
+		catch (Exception) {
 			// ignored
 		}
 	}
