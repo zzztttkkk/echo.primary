@@ -12,7 +12,7 @@ public class TcpEchoProtocol : ITcpProtocol {
 	}
 
 	private async Task Read() {
-		while (Connection.Alive) {
+		while (Connection.IsAlive) {
 			var buf = new byte[1024];
 			var len = await Connection.Read(buf);
 			if (len < 1) {

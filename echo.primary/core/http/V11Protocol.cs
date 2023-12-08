@@ -7,6 +7,12 @@ public class V11Protocol : ITcpProtocol {
 	}
 
 	public void ConnectionMade(TcpConnection conn) {
+		_ = ReadRequests(conn);
+	}
+
+	private async Task ReadRequests(TcpConnection conn) {
+		while (conn.IsAlive) {
+		}
 	}
 
 	public void ConnectionLost(Exception? exception) {

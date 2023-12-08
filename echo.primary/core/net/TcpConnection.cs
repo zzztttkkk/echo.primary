@@ -1,10 +1,11 @@
 ﻿using System.Net.Security;
 using System.Net.Sockets;
+using echo.primary.core.io;
 using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
-public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
+public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader {
 	private SslStream? _sslStream;
 	private bool _closed;
 	private ITcpProtocol? _protocol;
@@ -13,7 +14,7 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable {
 	public Logger Logger => server.Logger;
 	public Socket Socket { get; } = socket;
 
-	public bool Alive => !_closed && Socket.Connected;
+	public bool IsAlive => !_closed && Socket.Connected;
 
 	public async Task Write(byte[] v) {
 		if (_closed || _stream == null) return;
