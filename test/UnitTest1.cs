@@ -1,12 +1,24 @@
-using System.Text.Json;
-using echo.primary.core.net;
 using echo.primary.utils;
 
 namespace test;
 
 class User {
-	[IniPropAttr(Ingore = true)] public string Name { get; set; }
-	public int Age { get; set; }
+	public string Name { get; set; } = "";
+	public uint Age { get; set; } = 0;
+
+	[IniPropAttr(Name = "Hp_Factor")] public float Factor { get; set; } = 0;
+
+	public Address Address { get; set; }
+
+	public override string ToString() {
+		return System.Text.Json.JsonSerializer.Serialize(this);
+	}
+}
+
+class Address {
+	public string City { get; set; } = "";
+	public string Street { get; set; } = "";
+	public string MailCode { get; set; } = "";
 }
 
 public class Tests {
@@ -17,6 +29,7 @@ public class Tests {
 
 	[Test]
 	public void Test1() {
-		IniLoader.Parse("../../../../example/v.ini", new User());
+		var user = IniLoader.Parse<User>("../../../../example/v.ini");
+		Console.WriteLine(user);
 	}
 }
