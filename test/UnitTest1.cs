@@ -1,6 +1,13 @@
+using System.Text.Json;
 using echo.primary.core.net;
+using echo.primary.utils;
 
 namespace test;
+
+class User {
+	[IniPropAttr(Ingore = true)] public string Name { get; set; }
+	public int Age { get; set; }
+}
 
 public class Tests {
 	[SetUp]
@@ -10,12 +17,6 @@ public class Tests {
 
 	[Test]
 	public void Test1() {
-		var a = new byte[10];
-		for (var i = 0; i < a.Length; i++) {
-			a[i] = 97;
-		}
-
-		var mv = new Memory<byte>(a, 0, 10);
-		Console.WriteLine($"{mv}");
+		IniLoader.Parse("../../../../example/v.ini", new User());
 	}
 }
