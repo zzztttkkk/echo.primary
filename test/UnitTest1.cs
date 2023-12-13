@@ -6,7 +6,10 @@ class User {
 	public string Name { get; set; } = "";
 	public uint Age { get; set; } = 0;
 
-	[IniPropAttr(Name = "Hp_Factor")] public float Factor { get; set; } = 0;
+	[Ini(Name = "Hp_Factor")] public float Factor { get; set; } = 0;
+
+	[Ini(Name = "pc_name", Required = true)]
+	public string PcName { get; set; }
 
 	public Address Address { get; set; }
 

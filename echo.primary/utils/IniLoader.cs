@@ -9,7 +9,7 @@ public delegate object IniCustomParse(object src);
 internal delegate string OnProcessEnvMissing(string envkey);
 
 [AttributeUsage(AttributeTargets.Property)]
-public class IniPropAttr : Attribute {
+public class Ini : Attribute {
 	public string Name = "";
 	public List<string>? Aliases = null;
 	public bool Ingored = false;
@@ -183,7 +183,7 @@ public static class IniLoader {
 	}
 
 
-	private static void OnSimpleType(IniGroup src, PropertyInfo prop, object dst, IniPropAttr attr) {
+	private static void OnSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
 		string? val = null;
 		foreach (
 			var key in new[] { prop.Name, attr.Name }
@@ -251,7 +251,7 @@ public static class IniLoader {
 		}
 	}
 
-	private static void OnNonSimpleType(IniGroup src, PropertyInfo prop, object dst, IniPropAttr attr) {
+	private static void OnNonSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
 		IniGroup? group = null;
 		foreach (
 			var key in new[] { prop.Name, attr.Name }
@@ -296,7 +296,7 @@ public static class IniLoader {
 		foreach (var property in dst.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
 
-			var attr = property.GetCustomAttributes<IniPropAttr>().FirstOrDefault(new IniPropAttr());
+			var attr = property.GetCustomAttributes<Ini>().FirstOrDefault(new Ini());
 			if (attr.Ingored) return;
 
 			if (IsSimpleType(property.PropertyType)) {
