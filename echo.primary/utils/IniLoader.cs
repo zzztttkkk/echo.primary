@@ -76,9 +76,7 @@ public class IniGroup {
 		}
 	}
 
-	internal void Fill(string path, Dictio
-		
-		nary<string, string> deps, OnProcessEnvMissing? opem = null) {
+	internal void Fill(string path, Dictionary<string, string> deps, OnProcessEnvMissing? opem = null) {
 		FillProcessEnvs(opem);
 	}
 }
