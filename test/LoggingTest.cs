@@ -10,7 +10,10 @@ public class LoggingTest {
 		rotationOptions.FileName = "./logs/v.log";
 		rotationOptions.ByDaily = true;
 		var logger = new Logger().AddAppender(new RotationAppender(rotationOptions));
-		logger.Error("xxxxx11");
+		for (var i = 0; i < 100; i++) {
+			logger.Error($"xxxxx: {i}");
+		}
+
 		logger.Flush();
 	}
 }

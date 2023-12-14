@@ -20,8 +20,8 @@ public class RotationAppender : IAppender {
 	private FileStream? _stream;
 	private long _fileSize;
 	private DirectoryInfo? _directoryInfo;
-	private readonly string filebasename;
-	private readonly string fileextname;
+	private readonly string _fileBaseName;
+	private readonly string _fileExtName;
 
 	private bool _stopping;
 	private readonly TaskCompletionSource _writeDoneTcs = new();
@@ -29,7 +29,7 @@ public class RotationAppender : IAppender {
 
 	private readonly Channel<LogItem> _channel = Channel.CreateUnbounded<LogItem>();
 
-	private readonly StringBuilder tmp;
+	private readonly StringBuilder _tmp;
 
 	public RotationAppender(RotationOptions opts) {
 		_options = opts;
@@ -43,22 +43,22 @@ public class RotationAppender : IAppender {
 
 		var idx = _options.FileName.LastIndexOf('.');
 		if (idx < 0) {
-			filebasename = _options.FileName;
-			fileextname = "";
+			_fileBaseName = _options.FileName;
+			_fileExtName = "";
 		}
 		else {
-			filebasename = _options.FileName[..idx].Trim();
-			fileextname = _options.FileName[(idx + 1)..].Trim();
+			_fileBaseName = _options.FileName[..idx].Trim();
+			_fileExtName = _options.FileName[(idx + 1)..].Trim();
 		}
 
 		if (_options.BufferSize < 4096) _options.BufferSize = 4096;
-		tmp = new StringBuilder(_options.BufferSize);
+		_tmp = new StringBuilder(_options.BufferSize);
 		_ = WriteLoopTask();
 	}
 
 	private Task Write(string line) {
-		tmp.Append(line);
-		return tmp.Length < _options.BufferSize ? Task.CompletedTask : WriteTmpToFile();
+		_tmp.Append(line);
+		return _tmp.Length < _options.BufferSize ? Task.CompletedTask : WriteTmpToFile();
 	}
 
 	private void RenameBySize() {
@@ -67,13 +67,17 @@ public class RotationAppender : IAppender {
 			idx = (long)Time.unixmills();
 		}
 		else {
-			foreach (var name in _directoryInfo.GetFiles().Select(v => v.Name).Where(v => v.StartsWith(filebasename))) {
-				if (fileextname.Length > 0 && !name.EndsWith(fileextname)) {
+			foreach (
+				var name in _directoryInfo.GetFiles()
+					.Select(v => v.Name)
+					.Where(v => v.StartsWith(_fileBaseName))
+			) {
+				if (_fileExtName.Length > 0 && !name.EndsWith(_fileExtName)) {
 					continue;
 				}
 
 				try {
-					var txt = name[filebasename.Length..^fileextname.Length];
+					var txt = name[_fileBaseName.Length..^_fileExtName.Length];
 					var num = Convert.ToInt64(txt);
 					if (num > idx) idx = num;
 				}
@@ -85,25 +89,25 @@ public class RotationAppender : IAppender {
 			idx++;
 		}
 
-		var nfn = $"{filebasename}{idx}";
-		if (fileextname.Length > 0) {
-			nfn += $".{fileextname}";
+		var nfn = $"{_fileBaseName}{idx}";
+		if (_fileExtName.Length > 0) {
+			nfn += $".{_fileExtName}";
 		}
 
 		DoRename(nfn);
 	}
 
 	private void RenameByDay(DateTime time) {
-		var nbasefn = $"{filebasename}_{time.Year}_{time.Month}_{time.Day}";
+		var nbasefn = $"{_fileBaseName}_{time.Year}_{time.Month}_{time.Day}";
 		var nfn = nbasefn;
-		if (fileextname.Length > 0) {
-			nfn += $"{nfn}.{fileextname}";
+		if (_fileExtName.Length > 0) {
+			nfn += $"{nfn}.{_fileExtName}";
 		}
 
 		if (File.Exists(nfn)) {
 			nfn = $"{nbasefn}.{Time.unixmills}";
-			if (fileextname.Length > 0) {
-				nfn += $"{nfn}.{fileextname}";
+			if (_fileExtName.Length > 0) {
+				nfn += $"{nfn}.{_fileExtName}";
 			}
 		}
 
@@ -119,9 +123,9 @@ public class RotationAppender : IAppender {
 	}
 
 	private async Task<int> WriteTmpToFileReal() {
-		var buf = Encoding.UTF8.GetBytes(tmp.ToString());
+		var buf = Encoding.UTF8.GetBytes(_tmp.ToString());
 		await _stream!.WriteAsync(buf);
-		tmp.Clear();
+		_tmp.Clear();
 		return buf.Length;
 	}
 
@@ -145,9 +149,10 @@ public class RotationAppender : IAppender {
 							continue;
 						}
 					}
-					
+
 					_stream = info.OpenWrite();
 					_fileSize = info.Length;
+					_stream.Seek(0, SeekOrigin.End);
 				}
 				else {
 					_stream = info.Create();
@@ -175,7 +180,7 @@ public class RotationAppender : IAppender {
 				var log = await _channel.Reader.ReadAsync(_readCts.Token);
 				if (_options.ByDaily) {
 					if (prevTime != null && log.time.Day != prevTime.Value.Day) {
-						if (tmp.Length > 0) {
+						if (_tmp.Length > 0) {
 							await WriteTmpToFile();
 						}
 
@@ -198,7 +203,7 @@ public class RotationAppender : IAppender {
 			await Write(Renderer.Render(Name, log));
 		}
 
-		if (tmp.Length > 0) {
+		if (_tmp.Length > 0) {
 			await WriteTmpToFile();
 		}
 
