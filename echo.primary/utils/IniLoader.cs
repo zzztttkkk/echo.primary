@@ -1,10 +1,11 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace echo.primary.utils;
 
 public interface IIniParser {
-	object Parse(Type targetType, object src, string? args = null);
+	object Parse(Type targetType, object src);
 };
 
 internal delegate string OnProcessEnvMissing(string envkey);
@@ -17,7 +18,6 @@ public class Ini : Attribute {
 	public bool Required = false;
 	public string Description = "";
 	public Type? ParserType = null;
-	public string? ParseArgs = null;
 
 	internal IIniParser Parser {
 		get {
@@ -340,12 +340,26 @@ public static class IniLoader {
 		return val;
 	}
 
+	private static readonly JsonNamingPolicy[] AllNameingPolicy = {
+		JsonNamingPolicy.CamelCase,
+		JsonNamingPolicy.KebabCaseLower,
+		JsonNamingPolicy.KebabCaseUpper,
+		JsonNamingPolicy.SnakeCaseLower,
+		JsonNamingPolicy.SnakeCaseUpper
+	};
+
+
 	public static void Bind(IniGroup src, object dst) {
 		foreach (var property in dst.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
 
 			var attr = property.GetCustomAttributes<Ini>().FirstOrDefault(new Ini());
 			if (attr.Ingored) return;
+			attr.Aliases ??= [];
+
+			foreach (var policy in AllNameingPolicy) {
+				attr.Aliases.Add(policy.ConvertName(property.Name));
+			}
 
 			if (attr.ParserType != null) {
 				var val = GetGroup(src, property, attr) ?? (object?)GetString(src, property, attr);
@@ -354,7 +368,7 @@ public static class IniLoader {
 					continue;
 				}
 
-				property.SetValue(dst, attr.Parser.Parse(property.PropertyType, val, attr.ParseArgs));
+				property.SetValue(dst, attr.Parser.Parse(property.PropertyType, val));
 				continue;
 			}
 
@@ -377,7 +391,7 @@ public static class IniLoader {
 
 public static class Parsers {
 	public class ByteSizeParser : IIniParser {
-		public object Parse(Type targetType, object src, string? args = null) {
+		public object Parse(Type targetType, object src) {
 			if (!Reflection.IsUnsignedIntType(targetType)) {
 				throw new Exception();
 			}
@@ -408,8 +422,20 @@ public static class Parsers {
 		}
 	}
 
-	public class TimeDurationParse : IIniParser {
-		public object Parse(Type targetType, object src, string? args = null) {
+	public class TimeDurationParser : IIniParser {
+		public object Parse(Type targetType, object src) {
+			throw new NotImplementedException();
+		}
+	}
+
+	public class BinaryFileParser : IIniParser {
+		public object Parse(Type targetType, object src) {
+			throw new NotImplementedException();
+		}
+	}
+
+	public class TextFileParser : IIniParser {
+		public object Parse(Type targetType, object src) {
 			throw new NotImplementedException();
 		}
 	}
