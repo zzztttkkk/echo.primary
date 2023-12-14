@@ -130,6 +130,10 @@ public class RotationAppender : IAppender {
 			if (_stream == null) {
 				var info = new FileInfo(_options.FileName);
 				_directoryInfo = info.Directory;
+				if (_directoryInfo is { Exists: false }) {
+					_directoryInfo.Create();
+				}
+
 				if (info.Exists) {
 					if (_options.ByDaily) {
 						var now = DateTime.Now;
@@ -141,7 +145,7 @@ public class RotationAppender : IAppender {
 							continue;
 						}
 					}
-
+					
 					_stream = info.OpenWrite();
 					_fileSize = info.Length;
 				}
