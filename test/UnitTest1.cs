@@ -8,7 +8,7 @@ class User {
 
 	[Ini(Name = "Hp_Factor")] public float Factor { get; set; } = 0;
 
-	[Ini(Name = "pc_name", Required = true)]
+	[Ini(Name = "pc_name", Required = true, ParserType = typeof(Parsers.ByteSizeParser))]
 	public string PcName { get; set; }
 
 	public Address Address { get; set; }

@@ -1,10 +1,11 @@
-﻿using System.Globalization;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace echo.primary.utils;
 
-public delegate object IniCustomParse(object src);
+public interface IIniParser {
+	object Parse(Type targetType, object src, string? args = null);
+};
 
 internal delegate string OnProcessEnvMissing(string envkey);
 
@@ -15,7 +16,23 @@ public class Ini : Attribute {
 	public bool Ingored = false;
 	public bool Required = false;
 	public string Description = "";
-	public IniCustomParse? Parse = null;
+	public Type? ParserType = null;
+	public string? ParseArgs = null;
+
+	internal IIniParser Parser {
+		get {
+			if (!typeof(IIniParser).IsAssignableFrom(ParserType!)) {
+				throw new Exception($"{ParserType!.FullName} is not a {nameof(IIniParser)}");
+			}
+
+			var constructor = ParserType!.GetConstructor([]);
+			if (constructor == null) {
+				throw new Exception($"{ParserType!.FullName} ha s no public default constructor");
+			}
+
+			return (IIniParser)constructor.Invoke(null);
+		}
+	}
 }
 
 public class IniGroup {
@@ -25,6 +42,11 @@ public class IniGroup {
 	internal IniGroup EnsureSubGroup(IEnumerable<string> path) {
 		var current = this;
 		foreach (var name in path) {
+			current.Values.TryGetValue(name, out var vtmp);
+			if (vtmp != null) {
+				throw new Exception($"`{name}` in values, can not in subs");
+			}
+
 			current.Subs.TryGetValue(name, out var tmp);
 			if (tmp == null) {
 				tmp = new IniGroup();
@@ -35,6 +57,15 @@ public class IniGroup {
 		}
 
 		return current;
+	}
+
+	internal void SetValue(string k, string v) {
+		Subs.TryGetValue(k, out var tmp);
+		if (tmp != null) {
+			throw new Exception($"`{k}` in subs, can not in values");
+		}
+
+		Values[k] = v;
 	}
 
 	internal IniGroup? GetGroup(List<string> path) {
@@ -165,12 +196,13 @@ public static class IniLoader {
 
 			var idx = line.IndexOf('=');
 			if (idx < 0) {
-				current.Values[MustKey(line, fp, lineIdx)] = "";
+				current.SetValue(MustKey(line, fp, lineIdx), "");
 			}
 			else {
-				current.Values[
-					MustKey(line[..idx].Trim(), fp, lineIdx)
-				] = Unquote(line[(idx + 1)..].Trim(), fp, lineIdx);
+				current.SetValue(
+					MustKey(line[..idx].Trim(), fp, lineIdx),
+					Unquote(line[(idx + 1)..].Trim(), fp, lineIdx)
+				);
 			}
 		}
 
@@ -182,29 +214,8 @@ public static class IniLoader {
 		return t.IsPrimitive || t == typeof(string);
 	}
 
-
 	private static void OnSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
-		string? val = null;
-		foreach (
-			var key in new[] { prop.Name, attr.Name }
-				.Select(tmp => tmp.Trim().ToUpper())
-				.Where(key => key.Length >= 1)
-		) {
-			val = src.GetValue(key);
-			if (val != null) break;
-		}
-
-		if (val == null && attr.Aliases is { Count: > 0 }) {
-			foreach (
-				var key in attr.Aliases
-					.Select(tmp => tmp.Trim().ToUpper())
-					.Where(v => v.Length >= 1)
-			) {
-				val = src.GetValue(key);
-				if (val != null) break;
-			}
-		}
-
+		var val = GetString(src, prop, attr);
 		if (val == null) {
 			if (attr.Required) throw new Exception($"missing required filed, {prop.Name}");
 			return;
@@ -249,9 +260,37 @@ public static class IniLoader {
 				throw new Exception($"can not convert to a int, {val}");
 			}
 		}
+
+		if (prop.PropertyType == typeof(bool)) {
+			prop.SetValue(dst, bool.Parse(val));
+			return;
+		}
+
+		throw new Exception();
 	}
 
 	private static void OnNonSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
+		var group = GetGroup(src, prop, attr);
+		if (group == null) {
+			if (attr.Required) throw new Exception($"missing required filed, {prop.Name}");
+			return;
+		}
+
+		var ins = prop.GetValue(dst);
+		if (ins == null) {
+			var constructor = prop.PropertyType.GetConstructor([]);
+			if (constructor == null) {
+				throw new Exception($"type {prop.PropertyType} must has a public default constructor");
+			}
+
+			ins = constructor.Invoke(null);
+		}
+
+		Bind(group, ins);
+		prop.SetValue(dst, ins);
+	}
+
+	private static IniGroup? GetGroup(IniGroup src, PropertyInfo prop, Ini attr) {
 		IniGroup? group = null;
 		foreach (
 			var key in new[] { prop.Name, attr.Name }
@@ -273,31 +312,51 @@ public static class IniLoader {
 			}
 		}
 
-		if (group == null) {
-			if (attr.Required) throw new Exception($"missing required filed, {prop.Name}");
-			return;
-		}
-
-		var ins = prop.GetValue(dst);
-		if (ins == null) {
-			var constructor = prop.PropertyType.GetConstructor([]);
-			if (constructor == null) {
-				throw new Exception($"type {prop.PropertyType} must has a public default constructor");
-			}
-
-			ins = constructor.Invoke(null);
-		}
-
-		Bind(group, ins);
-		prop.SetValue(dst, ins);
+		return group;
 	}
 
-	private static void Bind(IniGroup src, object dst) {
+	private static string? GetString(IniGroup src, PropertyInfo prop, Ini attr) {
+		string? val = null;
+		foreach (
+			var key in new[] { prop.Name, attr.Name }
+				.Select(tmp => tmp.Trim().ToUpper())
+				.Where(key => key.Length >= 1)
+		) {
+			val = src.GetValue(key);
+			if (val != null) break;
+		}
+
+		if (val == null && attr.Aliases is { Count: > 0 }) {
+			foreach (
+				var key in attr.Aliases
+					.Select(tmp => tmp.Trim().ToUpper())
+					.Where(v => v.Length >= 1)
+			) {
+				val = src.GetValue(key);
+				if (val != null) break;
+			}
+		}
+
+		return val;
+	}
+
+	public static void Bind(IniGroup src, object dst) {
 		foreach (var property in dst.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
 
 			var attr = property.GetCustomAttributes<Ini>().FirstOrDefault(new Ini());
 			if (attr.Ingored) return;
+
+			if (attr.ParserType != null) {
+				var val = GetGroup(src, property, attr) ?? (object?)GetString(src, property, attr);
+				if (val == null) {
+					if (attr.Required) throw new Exception($"missing required filed, {property.Name}");
+					continue;
+				}
+
+				property.SetValue(dst, attr.Parser.Parse(property.PropertyType, val, attr.ParseArgs));
+				continue;
+			}
 
 			if (IsSimpleType(property.PropertyType)) {
 				OnSimpleType(src, property, dst, attr);
@@ -313,5 +372,45 @@ public static class IniLoader {
 		var root = Parse(fp);
 		Bind(root, ins);
 		return ins;
+	}
+}
+
+public static class Parsers {
+	public class ByteSizeParser : IIniParser {
+		public object Parse(Type targetType, object src, string? args = null) {
+			if (!Reflection.IsUnsignedIntType(targetType)) {
+				throw new Exception();
+			}
+
+			var unit = "byte";
+			var value = "0";
+
+			switch (src) {
+				case IniGroup group: {
+					var tu = group.GetValue("UNIT");
+					var tv = group.GetValue("VALUE");
+					if (!string.IsNullOrEmpty(tu)) {
+						unit = tu;
+					}
+
+					if (!string.IsNullOrEmpty(tv)) {
+						value = tv;
+					}
+
+					break;
+				}
+				case string txt: {
+					break;
+				}
+			}
+
+			return 12;
+		}
+	}
+
+	public class TimeDurationParse : IIniParser {
+		public object Parse(Type targetType, object src, string? args = null) {
+			throw new NotImplementedException();
+		}
 	}
 }

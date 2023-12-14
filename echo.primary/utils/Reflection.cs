@@ -43,6 +43,16 @@ public static class Reflection {
 		throw new Exception($"unsupported type: {t}");
 	}
 
+	public static object ObjectToInt(object v, Type t) {
+		if (t == typeof(short)) return Convert.ToInt16(v);
+		if (t == typeof(ushort)) return Convert.ToUInt16(v);
+		if (t == typeof(int)) return Convert.ToInt32(v);
+		if (t == typeof(uint)) return Convert.ToUInt32(v);
+		if (t == typeof(long)) return Convert.ToUInt64(v);
+		if (t == typeof(ulong)) return Convert.ToUInt64(v);
+		throw new Exception($"unsupported type: {t}");
+	}
+
 	public static object StringToFloat(string v, Type t) {
 		if (t == typeof(double)) return Convert.ToDouble(v);
 		if (t == typeof(float)) return Convert.ToSingle(v);
