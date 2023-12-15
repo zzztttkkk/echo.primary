@@ -58,8 +58,8 @@ public class RotationAppender : IAppender {
 		});
 	}
 
-	private Task Write(string line) {
-		_tmp.Append(line);
+	private Task Write(LogItem log) {
+		Renderer.Render(_tmp, Name, log);
 		return _tmp.Length < _options.BufferSize ? Task.CompletedTask : WriteTmpToFile();
 	}
 
@@ -167,7 +167,7 @@ public class RotationAppender : IAppender {
 					prevTime = log.time;
 				}
 
-				await Write(Renderer.Render(Name, log));
+				await Write(log);
 			}
 			catch (TaskCanceledException) {
 				break;
@@ -177,7 +177,7 @@ public class RotationAppender : IAppender {
 		while (true) {
 			_channel.Reader.TryRead(out var log);
 			if (log == null) break;
-			await Write(Renderer.Render(Name, log));
+			await Write(log);
 		}
 
 		await DoFlushReal();

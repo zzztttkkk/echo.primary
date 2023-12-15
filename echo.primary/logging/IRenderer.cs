@@ -1,7 +1,9 @@
-﻿namespace echo.primary.logging;
+﻿using System.Text;
+
+namespace echo.primary.logging;
 
 public interface IRenderer {
 	string TimeLayout { get; set; }
 
-	string Render(string name, LogItem log);
+	void Render(StringBuilder dst, string name, LogItem log);
 }

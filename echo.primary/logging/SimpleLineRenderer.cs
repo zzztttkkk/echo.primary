@@ -16,11 +16,11 @@ public record ColorOptions(
 public class SimpleLineRenderer : IRenderer {
 	public string TimeLayout { get; set; } = "yyyy-MM-dd HH:mm:ss.fff/z";
 
-	public string Render(string name, LogItem log) {
-		StringBuilder builder = new();
-
+	public void Render(StringBuilder builder, string name, LogItem log) {
 		// loggerName
-		builder.Append($"[{name}] ");
+		if (!string.IsNullOrEmpty(name)) {
+			builder.Append($"[{name}] ");
+		}
 
 		// time
 		builder.Append($"[{log.time.ToString(TimeLayout)}] ");
@@ -29,11 +29,11 @@ public class SimpleLineRenderer : IRenderer {
 		builder.Append($"[{log.level}] ");
 
 		// action.path
-		if (log.action.Length > 0) {
+		if (!string.IsNullOrEmpty(log.action)) {
 			builder.Append($"[{log.action}.");
 		}
 
-		if (log.path.Length > 0) {
+		if (!string.IsNullOrEmpty(log.path)) {
 			builder.Append($"{log.path}] ");
 		}
 
@@ -51,6 +51,5 @@ public class SimpleLineRenderer : IRenderer {
 		}
 
 		builder.Append('\n');
-		return builder.ToString();
 	}
 }
