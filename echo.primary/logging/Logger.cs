@@ -24,6 +24,12 @@ public class Logger {
 		}
 	}
 
+	public void Close() {
+		foreach (var appender in _appenders) {
+			appender.Close();
+		}
+	}
+
 	public Logger AddAppender(IAppender appender) {
 		_appenders.Add(appender);
 		return this;

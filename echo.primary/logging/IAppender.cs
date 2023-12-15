@@ -8,4 +8,5 @@ public interface IAppender {
 
 	void Append(LogItem log);
 	void Flush();
+	void Close();
 }
