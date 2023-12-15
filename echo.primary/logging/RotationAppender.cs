@@ -37,20 +37,15 @@ public class RotationAppender : IAppender {
 	public RotationAppender(RotationOptions opts) {
 		_options = opts;
 		if (_options is { ByDate: false, BySize: < 1 } or { ByDate: true, BySize: > 1 }) {
-			throw new Exception("ByDaily or BySize all true or all false");
+			throw new Exception("ByDate or BySize all true or all false");
 		}
 
-		if (string.IsNullOrEmpty(_options.FileName)) {
-			throw new Exception("empty FileName");
-		}
+		if (string.IsNullOrEmpty(_options.FileName)) throw new Exception("empty FileName");
 
 		_fileBaseName = Path.GetFileNameWithoutExtension(_options.FileName);
 		_fileExtName = Path.GetExtension(_options.FileName);
 		var directoryInfo = new FileInfo(_options.FileName).Directory;
-		if (directoryInfo == null) {
-			throw new Exception("empty directory info");
-		}
-
+		if (directoryInfo == null) throw new Exception("empty directory info");
 		directoryInfo.Create();
 		_directoryInfo = directoryInfo;
 
@@ -58,6 +53,7 @@ public class RotationAppender : IAppender {
 		_tmp = new StringBuilder(_options.BufferSize);
 		_ = WriteLoopTask().ContinueWith(t => {
 			if (t.Exception != null) _writeException = t.Exception;
+			_stopping = true;
 			_writeDoneTcs.TrySetResult();
 		});
 	}
@@ -196,6 +192,7 @@ public class RotationAppender : IAppender {
 	}
 
 	public void Flush() {
+		if (_stopping) return;
 		_flushDoneTcs ??= new();
 		_flushDoneTcs.Task.Wait();
 		_flushDoneTcs = null;

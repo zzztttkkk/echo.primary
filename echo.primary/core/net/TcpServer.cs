@@ -150,6 +150,7 @@ public class TcpServer : IDisposable {
 		Logger.Flush();
 
 		try {
+			Logger.Close();
 			_sock.Close();
 			_sock.Dispose();
 		}
