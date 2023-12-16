@@ -4,15 +4,17 @@ namespace echo.primary.logging;
 
 public class ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? renderer = null) : IAppender {
 	public Level Level { get; } = level;
-	public string Name { get; } = name;
+	public string Name { get; set; } = name;
 	public IRenderer Renderer { get; } = renderer ?? new SimpleLineRenderer();
 
 	private readonly StringBuilder sb = new();
 
 	public void Append(LogItem log) {
-		Renderer.Render(sb, Name, log);
-		Console.Write(sb.ToString());
-		sb.Clear();
+		lock (sb) {
+			Renderer.Render(sb, Name, log);
+			Console.Write(sb.ToString());
+			sb.Clear();
+		}
 	}
 
 	public void Flush() {
@@ -22,4 +24,11 @@ public class ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? 
 	public void Close() {
 		Flush();
 	}
+}
+
+public class ColorfulConsoleAppender(
+	string name,
+	Level level = Level.TRACE,
+	IRenderer? renderer = null
+) : ConsoleAppender(name, level, renderer) {
 }

@@ -15,7 +15,7 @@ public class Ini : Attribute {
 	public string Name = "";
 	public List<string>? Aliases = null;
 	public bool Ingored = false;
-	public bool Required = false;
+	public bool Optional = false;
 	public string Description = "";
 	public Type? ParserType = null;
 
@@ -211,14 +211,24 @@ public static class IniLoader {
 	}
 
 	private static bool IsSimpleType(Type t) {
-		return t.IsPrimitive || t == typeof(string);
+		return t.IsPrimitive || t == typeof(string) || t.IsEnum;
 	}
 
 	private static void OnSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
 		var val = GetString(src, prop, attr);
 		if (val == null) {
-			if (attr.Required) throw new Exception($"missing required filed, {prop.Name}");
+			if (!attr.Optional) throw new Exception($"missing required filed, {prop.Name}");
 			return;
+		}
+
+		if (prop.PropertyType.IsEnum) {
+			try {
+				prop.SetValue(dst, Enum.Parse(prop.PropertyType, val, true));
+				return;
+			}
+			catch {
+				throw new Exception($"can not convert to enum `{prop.PropertyType.Name}`, {val}");
+			}
 		}
 
 		if (prop.PropertyType == typeof(string)) {
@@ -272,7 +282,7 @@ public static class IniLoader {
 	private static void OnNonSimpleType(IniGroup src, PropertyInfo prop, object dst, Ini attr) {
 		var group = GetGroup(src, prop, attr);
 		if (group == null) {
-			if (attr.Required) throw new Exception($"missing required filed, {prop.Name}");
+			if (!attr.Optional) throw new Exception($"missing required filed, {prop.Name}");
 			return;
 		}
 
@@ -364,7 +374,7 @@ public static class IniLoader {
 			if (attr.ParserType != null) {
 				var val = GetGroup(src, property, attr) ?? (object?)GetString(src, property, attr);
 				if (val == null) {
-					if (attr.Required) throw new Exception($"missing required filed, {property.Name}");
+					if (!attr.Optional) throw new Exception($"missing required filed, {property.Name}");
 					continue;
 				}
 

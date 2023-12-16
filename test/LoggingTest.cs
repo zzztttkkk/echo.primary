@@ -1,4 +1,5 @@
-﻿using echo.primary.logging;
+﻿using System.Text;
+using echo.primary.logging;
 
 namespace test;
 

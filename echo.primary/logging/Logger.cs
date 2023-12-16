@@ -1,6 +1,4 @@
-﻿using echo.primary.utils;
-
-namespace echo.primary.logging;
+﻿namespace echo.primary.logging;
 
 public class Logger {
 	private readonly List<IAppender> _appenders = new();
@@ -31,6 +29,7 @@ public class Logger {
 	}
 
 	public Logger AddAppender(IAppender appender) {
+		appender.Name = $"{Name}.{appender.Name}";
 		_appenders.Add(appender);
 		return this;
 	}
