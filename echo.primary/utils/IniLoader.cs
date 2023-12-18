@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -17,15 +18,16 @@ public class Ini : Attribute {
 	public bool Ingored = false;
 	public bool Optional = false;
 	public string Description = "";
-	public Type? ParserType = null;
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    public Type? ParserType = null;
 
-	internal IIniParser Parser {
+    internal IIniParser Parser {
 		get {
 			if (!typeof(IIniParser).IsAssignableFrom(ParserType!)) {
 				throw new Exception($"{ParserType!.FullName} is not a {nameof(IIniParser)}");
 			}
 
-			var constructor = ParserType!.GetConstructor([]);
+			var constructor = ParserType.GetConstructor([]);
 			if (constructor == null) {
 				throw new Exception($"{ParserType!.FullName} ha s no public default constructor");
 			}
