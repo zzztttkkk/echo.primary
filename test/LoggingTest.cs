@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using System.Drawing;
 using echo.primary.logging;
 
 namespace test;
@@ -40,10 +40,15 @@ public class LoggingTest {
 				new ColorfulConsoleAppender(
 					"ColorfulAppender",
 					Level.TRACE,
-					new ColorOptions(
-						Time: ConsoleColor.Red,
-						Message: ConsoleColor.Green
-					)
+					new() {
+						{
+							Level.ERROR, new ColorSchema(
+								Time: Color.DarkRed,
+								Level: Color.Red,
+								Message: Color.Black
+							)
+						}
+					}
 				)
 			);
 

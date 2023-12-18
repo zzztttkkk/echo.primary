@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Drawing;
+using System.Text;
 
 namespace echo.primary.logging;
 
@@ -39,119 +40,67 @@ public class SimpleLineRenderer : IRenderer {
 	}
 }
 
-public record ColorOptions(
-	ConsoleColor? Name = null,
-	ConsoleColor? Time = null,
-	ConsoleColor? Level = null,
-	ConsoleColor? Action = null,
-	ConsoleColor? Message = null,
-	ConsoleColor? ArgsTitle = null,
-	ConsoleColor? ArgsValue = null,
-	ConsoleColor? ArgsSep = null
+public record ColorSchema(
+	Color? Name = null,
+	Color? Time = null,
+	Color? Level = null,
+	Color? Action = null,
+	Color? Message = null,
+	Color? ArgsTitle = null,
+	Color? ArgsValue = null,
+	Color? ArgsSep = null
 );
 
-internal class ColorfulSimpleLineRenderer(ColorOptions options) : IRenderer {
+internal class ColorfulSimpleLineRenderer(Dictionary<Level, ColorSchema> schemas) : IRenderer {
 	public string TimeLayout { get; set; } = "yyyy-MM-dd HH:mm:ss.fff/z";
-	private ColorOptions ColorOptions { get; } = options;
+	private Dictionary<Level, ColorSchema> ColorSchemas { get; } = schemas;
 
-	private void WithColor(StringBuilder builder, string val, ConsoleColor? color) {
+	private static void WithColor(StringBuilder builder, string val, Color? color) {
 		if (color == null) {
 			builder.Append(val);
 			return;
 		}
 
-		var matched = true;
-
-		switch (color) {
-			case ConsoleColor.Black:
-				builder.Append("\x1b[38;5;0m");
-				break;
-			case ConsoleColor.DarkBlue:
-				builder.Append("\x1b[38;5;4m");
-				break;
-			case ConsoleColor.DarkGreen:
-				builder.Append("\x1b[38;5;2m");
-				break;
-			case ConsoleColor.DarkCyan:
-				builder.Append("\x1b[38;5;6m");
-				break;
-			case ConsoleColor.DarkRed:
-				builder.Append("\x1b[38;5;1m");
-				break;
-			case ConsoleColor.DarkMagenta:
-				builder.Append("\x1b[38;5;5m");
-				break;
-			case ConsoleColor.DarkYellow:
-				builder.Append("\x1b[38;5;3m");
-				break;
-			case ConsoleColor.Gray:
-				builder.Append("\x1b[38;5;8m");
-				break;
-			case ConsoleColor.DarkGray:
-				builder.Append("\x1b[38;5;7m");
-				break;
-			case ConsoleColor.Blue:
-				builder.Append("\x1b[38;5;12m");
-				break;
-			case ConsoleColor.Green:
-				builder.Append("\x1b[38;5;40m");
-				break;
-			case ConsoleColor.Cyan:
-				builder.Append("\x1b[38;5;14m");
-				break;
-			case ConsoleColor.Red:
-				builder.Append("\x1b[38;5;9m");
-				break;
-			case ConsoleColor.Magenta:
-				builder.Append("\x1b[38;5;13m");
-				break;
-			case ConsoleColor.Yellow:
-				builder.Append("\x1b[38;5;11m");
-				break;
-			case ConsoleColor.White:
-				builder.Append("\x1b[38;5;15m");
-				break;
-			default:
-				matched = false;
-				break;
-		}
-
+		builder.Append($"\x1b[38;2;{color.Value.R};{color.Value.G};{color.Value.B}m");
 		builder.Append(val);
-		if (matched) builder.Append("\x1b[0m");
+		builder.Append("\x1b[0m");
 	}
 
 	public void Render(StringBuilder builder, string name, LogItem log) {
+		ColorSchemas.TryGetValue(log.level, out var schema);
+		schema ??= new ColorSchema();
+
 		// loggerName
 		if (!string.IsNullOrEmpty(name)) {
-			WithColor(builder, $"[{name}] ", ColorOptions.Name);
+			WithColor(builder, $"[{name}] ", schema.Name);
 		}
 
 		// time
-		WithColor(builder, $"[{log.time.ToString(TimeLayout)}] ", ColorOptions.Time);
+		WithColor(builder, $"[{log.time.ToString(TimeLayout)}] ", schema.Time);
 
 		// level
-		WithColor(builder, $"[{log.level}] ", ColorOptions.Level);
+		WithColor(builder, $"[{log.level}] ", schema.Level);
 
 		// action
 		if (!string.IsNullOrEmpty(log.action)) {
-			WithColor(builder, $"[{log.action}.", ColorOptions.Action);
+			WithColor(builder, $"[{log.action}.", schema.Action);
 		}
 
 		// message
-		WithColor(builder, log.msg, ColorOptions.Message);
+		WithColor(builder, log.msg, schema.Message);
 
 		if (log.args is { Count: > 0 }) {
-			WithColor(builder, " [Args: ", ColorOptions.ArgsTitle);
+			WithColor(builder, " [Args: ", schema.ArgsTitle);
 			foreach (var obj in log.args) {
 				WithColor(
 					builder,
 					obj.ToString() ?? $"{obj.GetType().Name}<{obj.GetHashCode()}>",
-					ColorOptions.ArgsValue
+					schema.ArgsValue
 				);
-				WithColor(builder, ",", ColorOptions.ArgsSep);
+				WithColor(builder, ",", schema.ArgsSep);
 			}
 
-			WithColor(builder, "] ", ColorOptions.ArgsTitle);
+			WithColor(builder, "] ", schema.ArgsTitle);
 		}
 
 		builder.Append('\n');

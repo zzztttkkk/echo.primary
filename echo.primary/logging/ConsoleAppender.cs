@@ -29,9 +29,9 @@ public class ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? 
 public class ColorfulConsoleAppender(
 	string name,
 	Level level = Level.TRACE,
-	ColorOptions? colors = null
+	Dictionary<Level, ColorSchema>? schemas = null
 ) : ConsoleAppender(
 	name,
 	level,
-	new ColorfulSimpleLineRenderer(colors ?? new ColorOptions())
+	new ColorfulSimpleLineRenderer(schemas ?? new())
 );
