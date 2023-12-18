@@ -7,6 +7,8 @@ namespace test;
 
 class Obj {
 	[Ini] public ConsoleColor Color { get; set; }
+
+	[Ini(ParserType = typeof(Parsers.ByteSizeParser))] public ulong SizeA { get; set; }
 }
 
 internal class EnumConverter : JsonConverter<ConsoleColor> {

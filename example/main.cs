@@ -18,31 +18,28 @@ var opts = new TcpSocketOptions(
 var server = new TcpServer(opts);
 server.Logger.Name = "TcpServer";
 server.Logger.AddAppender(
-    new ColorfulConsoleAppender(
-        "ColorfulConsoleAppend",
-        schemas: new Dictionary<Level, ColorSchema>() {
-            {
-                Level.INFO, new ColorSchema(Level: Color.Green, Message: Color.Green)
-            }
-        }
-    )
+	new ColorfulConsoleAppender(
+		"ColorfulConsoleAppend",
+		schemas: new Dictionary<Level, ColorSchema>() {
+			{
+				Level.INFO, new ColorSchema(Level: Color.Green, Message: Color.Green)
+			}
+		}
+	)
 );
 
 var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-lifetime.ApplicationStarted.Register(() =>
-{
-    server.Start(
-        "0.0.0.0", 8080, () => new TcpEchoProtocol()
-    ).ContinueWith(
-        t =>
-        {
-            if (t.Exception != null)
-            {
-                server.Logger.Error($"{t.Exception}");
-            }
-        }
-    );
+lifetime.ApplicationStarted.Register(() => {
+	server.Start(
+		"0.0.0.0", 8080, () => new TcpEchoProtocol()
+	).ContinueWith(
+		t => {
+			if (t.Exception == null) return;
+
+			server.Logger.Error($"{t.Exception}");
+		}
+	);
 });
 
 lifetime.ApplicationStopping.Register(() => { server.Stop(); });

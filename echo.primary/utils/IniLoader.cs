@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -18,10 +19,9 @@ public class Ini : Attribute {
 	public bool Ingored = false;
 	public bool Optional = false;
 	public string Description = "";
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-    public Type? ParserType = null;
+	[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] public Type? ParserType = null;
 
-    internal IIniParser Parser {
+	internal IIniParser Parser {
 		get {
 			if (!typeof(IIniParser).IsAssignableFrom(ParserType!)) {
 				throw new Exception($"{ParserType!.FullName} is not a {nameof(IIniParser)}");
@@ -402,10 +402,31 @@ public static class IniLoader {
 }
 
 public static class Parsers {
+	private static readonly Regex ByteSizeRegexp = new(@"^(?<nums>\d+)[a-zA-Z]*?$");
+	private static readonly Regex UnitGroupRegexp = new(@"^((?<nums>\d+)(?<unit>[a-zA-Z]*?))+$");
+
+	private record UnitItem(string Nums, string Unit);
+
+	private static List<UnitItem> Items(string txt) {
+		var lst = new List<UnitItem>();
+		var match = UnitGroupRegexp.Match(txt);
+
+		for (int i = 0; i < match.Length; i++) {
+			var group = match.Groups[i];
+			Console.WriteLine(group.Value);
+		}
+
+		return lst;
+	}
+
+	public static void VV() {
+		Items("3y5m6d");
+	}
+
 	public class ByteSizeParser : IIniParser {
 		public object Parse(Type targetType, object src) {
-			if (!Reflection.IsUnsignedIntType(targetType)) {
-				throw new Exception();
+			if (!Reflection.IsIntType(targetType)) {
+				throw new Exception("the prop is not an int");
 			}
 
 			var unit = "byte";
@@ -426,11 +447,49 @@ public static class Parsers {
 					break;
 				}
 				case string txt: {
+					txt = txt.Trim();
+					var match = ByteSizeRegexp.Match(txt);
+					if (match == null) {
+						throw new Exception($"bad value, {txt}");
+					}
+
+					match.Groups.TryGetValue("nums", out var tmp);
+					if (tmp == null) {
+						throw new Exception($"bad value, {txt}");
+					}
+
+					value = tmp.Value;
+					unit = txt[value.Length ..];
 					break;
 				}
 			}
 
-			return 12;
+			unit = unit.Trim().ToUpper();
+
+			var bv = Reflection.ObjectToInt(value, targetType);
+
+			switch (unit) {
+				case "K":
+				case "KB": {
+					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024, targetType);
+				}
+				case "M":
+				case "MB": {
+					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024 * 1024, targetType);
+				}
+				case "G":
+				case "GB": {
+					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024 * 1024 * 1024, targetType);
+				}
+				case "BYTE":
+				case "B":
+				case "": {
+					return Reflection.ObjectToInt(bv, targetType);
+				}
+				default: {
+					throw new Exception("bad value, can not cast to byte size");
+				}
+			}
 		}
 	}
 
