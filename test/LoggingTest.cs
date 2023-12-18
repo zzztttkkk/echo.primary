@@ -31,4 +31,24 @@ public class LoggingTest {
 
 		logger.Close();
 	}
+
+
+	[Test]
+	public void TestColorful() {
+		var logger =
+			new Logger().AddAppender(
+				new ColorfulConsoleAppender(
+					"ColorfulAppender",
+					Level.TRACE,
+					new ColorOptions(
+						Time: ConsoleColor.Red,
+						Message: ConsoleColor.Green
+					)
+				)
+			);
+
+		logger.Error("0.0");
+
+		logger.Close();
+	}
 }

@@ -5,6 +5,5 @@ public record LogItem(
 	string msg,
 	DateTime time,
 	List<object>? args = null,
-	string action = "",
-	string path = ""
+	string action = ""
 );
