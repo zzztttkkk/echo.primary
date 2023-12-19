@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Net.Http.Headers;
+using System.Drawing;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -129,8 +129,52 @@ public class IniGroup {
 	}
 }
 
+internal class ColorParser : IIniParser {
+	private static int? s2i(string? v) {
+		if (string.IsNullOrEmpty(v)) return null;
+
+		try {
+			return Convert.ToInt32(v);
+		}
+		catch {
+			try {
+				return Convert.ToInt32(v, 16);
+			}
+			catch {
+				return null;
+			}
+		}
+	}
+
+	public object Parse(Type targetType, object src) {
+		switch (src) {
+			case string txt: {
+				break;
+			}
+			case IniGroup group: {
+				var name = group.GetValue("NAME");
+				if (name != null) {
+					return Color.FromName(name);
+				}
+
+				var r = s2i(group.GetValue("R"));
+				var g = s2i(group.GetValue("G"));
+				var b = s2i(group.GetValue("B"));
+				var a = s2i(group.GetValue("A"));
+				return Color.FromArgb(a ?? 255, r ?? 0, g ?? 0, b ?? 0);
+			}
+		}
+
+		return Color.FromArgb(255, 0, 0, 0);
+	}
+}
+
 public static class IniLoader {
 	private static readonly Regex NameRegexp = new("^[A-Z_][A-Z0-9_]*$");
+
+	private static Dictionary<Type, IIniParser> InternalParsers = new() {
+		{ typeof(Color), new ColorParser() }
+	};
 
 	private static string[] MustGroupPath(string[] path, string fp, int lidx) {
 		var names = new string[path.Length];
@@ -192,7 +236,14 @@ public static class IniLoader {
 					throw new Exception($"bad group name line, ${fp}:${lineIdx}");
 				}
 
-				current = root.EnsureSubGroup(MustGroupPath(line[1..^1].Split('.'), fp, lineIdx));
+				var name = line[1..^1].Trim();
+				if (name == "" || name.Equals("$root", StringComparison.CurrentCultureIgnoreCase)) {
+					current = root;
+				}
+				else {
+					current = root.EnsureSubGroup(MustGroupPath(name.Split('.'), fp, lineIdx));
+				}
+
 				continue;
 			}
 
@@ -360,7 +411,6 @@ public static class IniLoader {
 		JsonNamingPolicy.SnakeCaseUpper
 	};
 
-
 	public static void Bind(IniGroup src, object dst) {
 		foreach (var property in dst.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
@@ -384,6 +434,18 @@ public static class IniLoader {
 				continue;
 			}
 
+			InternalParsers.TryGetValue(property.PropertyType, out var parser);
+			if (parser != null) {
+				var val = GetGroup(src, property, attr) ?? (object?)GetString(src, property, attr);
+				if (val == null) {
+					if (!attr.Optional) throw new Exception($"missing required filed, {property.Name}");
+					continue;
+				}
+
+				property.SetValue(dst, parser.Parse(property.PropertyType, val));
+				continue;
+			}
+
 			if (IsSimpleType(property.PropertyType)) {
 				OnSimpleType(src, property, dst, attr);
 				continue;
@@ -402,25 +464,22 @@ public static class IniLoader {
 }
 
 public static class Parsers {
-	private static readonly Regex ByteSizeRegexp = new(@"^(?<nums>\d+)[a-zA-Z]*?$");
-	private static readonly Regex UnitGroupRegexp = new(@"^((?<nums>\d+)(?<unit>[a-zA-Z]*?))+$");
+	private static readonly Regex UnitGroupRegexp = new(@"(?<nums>\d+)\s*(?<unit>[a-zA-Z]*)");
 
-	private record UnitItem(string Nums, string Unit);
+	private record UnitItem(string Nums, string Unit) {
+		public string Nums { get; set; } = Nums;
+		public string Unit { get; set; } = Unit;
+	};
 
 	private static List<UnitItem> Items(string txt) {
 		var lst = new List<UnitItem>();
-		var match = UnitGroupRegexp.Match(txt);
-
-		for (int i = 0; i < match.Length; i++) {
-			var group = match.Groups[i];
-			Console.WriteLine(group.Value);
+		var matchs = UnitGroupRegexp.Matches(txt);
+		for (var i = 0; i < matchs.Count; i++) {
+			var match = matchs[i];
+			lst.Add(new UnitItem(match.Groups["nums"].Value, match.Groups["unit"].Value));
 		}
 
 		return lst;
-	}
-
-	public static void VV() {
-		Items("3y5m6d");
 	}
 
 	public class ByteSizeParser : IIniParser {
@@ -429,67 +488,62 @@ public static class Parsers {
 				throw new Exception("the prop is not an int");
 			}
 
-			var unit = "byte";
-			var value = "0";
+			var items = new List<UnitItem>();
 
 			switch (src) {
 				case IniGroup group: {
 					var tu = group.GetValue("UNIT");
 					var tv = group.GetValue("VALUE");
+					var item = new UnitItem("", "");
 					if (!string.IsNullOrEmpty(tu)) {
-						unit = tu;
+						item.Unit = tu;
 					}
 
 					if (!string.IsNullOrEmpty(tv)) {
-						value = tv;
+						item.Nums = tv;
 					}
 
+					items.Add(item);
 					break;
 				}
 				case string txt: {
-					txt = txt.Trim();
-					var match = ByteSizeRegexp.Match(txt);
-					if (match == null) {
-						throw new Exception($"bad value, {txt}");
-					}
-
-					match.Groups.TryGetValue("nums", out var tmp);
-					if (tmp == null) {
-						throw new Exception($"bad value, {txt}");
-					}
-
-					value = tmp.Value;
-					unit = txt[value.Length ..];
+					items = Items(txt);
 					break;
 				}
 			}
 
-			unit = unit.Trim().ToUpper();
 
-			var bv = Reflection.ObjectToInt(value, targetType);
-
-			switch (unit) {
-				case "K":
-				case "KB": {
-					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024, targetType);
-				}
-				case "M":
-				case "MB": {
-					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024 * 1024, targetType);
-				}
-				case "G":
-				case "GB": {
-					return Reflection.ObjectToInt(Convert.ToUInt64(bv) * 1024 * 1024 * 1024, targetType);
-				}
-				case "BYTE":
-				case "B":
-				case "": {
-					return Reflection.ObjectToInt(bv, targetType);
-				}
-				default: {
-					throw new Exception("bad value, can not cast to byte size");
+			ulong bv = 0;
+			foreach (var item in items) {
+				switch (item.Unit.Trim().ToUpper()) {
+					case "K":
+					case "KB": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1024;
+						break;
+					}
+					case "M":
+					case "MB": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1024 * 1024;
+						break;
+					}
+					case "G":
+					case "GB": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1024 * 1024 * 1024;
+						break;
+					}
+					case "BYTE":
+					case "B":
+					case "": {
+						bv += Convert.ToUInt64(item.Nums.Trim());
+						break;
+					}
+					default: {
+						throw new Exception("bad value, can not cast to byte size");
+					}
 				}
 			}
+
+			return Reflection.ObjectToInt(bv, targetType);
 		}
 	}
 
