@@ -6,7 +6,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 namespace test;
 
 class Obj {
-	[Ini] public Color Color { get; set; }
+	public Color Color { get; set; }
 
 	[Ini(ParserType = typeof(Parsers.ByteSizeParser))] public int SizeA { get; set; }
 }
