@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Reflection;
 using System.Text.Json;
@@ -129,51 +130,13 @@ public class IniGroup {
 	}
 }
 
-internal class ColorParser : IIniParser {
-	private static int? s2i(string? v) {
-		if (string.IsNullOrEmpty(v)) return null;
-
-		try {
-			return Convert.ToInt32(v);
-		}
-		catch {
-			try {
-				return Convert.ToInt32(v, 16);
-			}
-			catch {
-				return null;
-			}
-		}
-	}
-
-	public object Parse(Type targetType, object src) {
-		switch (src) {
-			case string txt: {
-				break;
-			}
-			case IniGroup group: {
-				var name = group.GetValue("NAME");
-				if (name != null) {
-					return Color.FromName(name);
-				}
-
-				var r = s2i(group.GetValue("R"));
-				var g = s2i(group.GetValue("G"));
-				var b = s2i(group.GetValue("B"));
-				var a = s2i(group.GetValue("A"));
-				return Color.FromArgb(a ?? 255, r ?? 0, g ?? 0, b ?? 0);
-			}
-		}
-
-		return Color.FromArgb(255, 0, 0, 0);
-	}
-}
-
 public static class IniLoader {
-	private static readonly Regex NameRegexp = new("^[A-Z_][A-Z0-9_]*$");
+	private static readonly Regex NameRegexp = new("^[A-Z_][A-Z0-9_-]*$");
 
-	private static Dictionary<Type, IIniParser> InternalParsers = new() {
-		{ typeof(Color), new ColorParser() }
+	private static readonly Dictionary<Type, IIniParser> InternalParsers = new() {
+		{ typeof(Color), new Parsers.ColorParser() },
+		{ typeof(TimeSpan), new Parsers.TimeDurationParser() },
+		{ typeof(DateTime), new Parsers.DateTimeParser() }
 	};
 
 	private static string[] MustGroupPath(string[] path, string fp, int lidx) {
@@ -196,7 +159,7 @@ public static class IniLoader {
 	private static string MustKey(string v, string fp, int lidx) {
 		v = v.ToUpper();
 		if (!NameRegexp.IsMatch(v)) {
-			throw new Exception($"bad key name line, ${fp}:${lidx}");
+			throw new Exception($"bad key name line, {fp}:{lidx}");
 		}
 
 		return v;
@@ -549,19 +512,148 @@ public static class Parsers {
 
 	public class TimeDurationParser : IIniParser {
 		public object Parse(Type targetType, object src) {
-			throw new NotImplementedException();
+			if (!Reflection.IsIntType(targetType) && targetType != typeof(TimeSpan)) {
+				throw new Exception("the prop is not an int");
+			}
+
+			var items = new List<UnitItem>();
+
+			switch (src) {
+				case IniGroup group: {
+					var tu = group.GetValue("UNIT");
+					var tv = group.GetValue("VALUE");
+					var item = new UnitItem("", "");
+					if (!string.IsNullOrEmpty(tu)) {
+						item.Unit = tu;
+					}
+
+					if (!string.IsNullOrEmpty(tv)) {
+						item.Nums = tv;
+					}
+
+					items.Add(item);
+					break;
+				}
+				case string txt: {
+					items = Items(txt);
+					break;
+				}
+			}
+
+			ulong bv = 0;
+			foreach (var item in items) {
+				switch (item.Unit.Trim().ToUpper()) {
+					case "":
+					case "MS":
+					case "MILLS": {
+						bv += Convert.ToUInt64(item.Nums.Trim());
+						break;
+					}
+					case "S":
+					case "SEC": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000;
+						break;
+					}
+					case "M":
+					case "MIN": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60;
+						break;
+					}
+					case "H":
+					case "HOUR": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60;
+						break;
+					}
+					case "D":
+					case "DAY": {
+						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60 * 24;
+						break;
+					}
+					default: {
+						throw new Exception("bad value, can not cast to byte size");
+					}
+				}
+			}
+
+			return Reflection.IsIntType(targetType)
+				? Reflection.ObjectToInt(bv, targetType)
+				: TimeSpan.FromMilliseconds(bv);
 		}
 	}
 
-	public class BinaryFileParser : IIniParser {
+	internal class ColorParser : IIniParser {
+		private static int? s2i(string? v) {
+			if (string.IsNullOrEmpty(v)) return null;
+
+			try {
+				return Convert.ToInt32(v);
+			}
+			catch {
+				try {
+					return Convert.ToInt32(v, 16);
+				}
+				catch {
+					return null;
+				}
+			}
+		}
+
 		public object Parse(Type targetType, object src) {
-			throw new NotImplementedException();
+			if (targetType != typeof(Color)) {
+				throw new Exception("the prop is not a color");
+			}
+
+			switch (src) {
+				case string txt: {
+					txt = txt.Trim();
+					if (txt.StartsWith('#')) {
+						txt = txt[1..].Trim();
+					}
+
+					return Color.FromName(txt);
+				}
+				case IniGroup group: {
+					var name = group.GetValue("NAME");
+					if (name != null) {
+						return Color.FromName(name);
+					}
+
+					var r = s2i(group.GetValue("R"));
+					var g = s2i(group.GetValue("G"));
+					var b = s2i(group.GetValue("B"));
+					var a = s2i(group.GetValue("A"));
+					return Color.FromArgb(a ?? 255, r ?? 0, g ?? 0, b ?? 0);
+				}
+				default: {
+					throw new UnreachableException();
+				}
+			}
 		}
 	}
 
-	public class TextFileParser : IIniParser {
+	internal class DateTimeParser : IIniParser {
 		public object Parse(Type targetType, object src) {
-			throw new NotImplementedException();
+			if (targetType != typeof(DateTime)) {
+				throw new Exception("the prop is not a time");
+			}
+
+			switch (src) {
+				case string txt: {
+					return DateTime.ParseExact(txt.Trim(), "yyyy-MM-dd hh:mm:ss zz", null);
+				}
+				case IniGroup group: {
+					var layout = group.GetValue("LAYOUT");
+					var value = group.GetValue("VALUE");
+					if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(layout)) {
+						throw new Exception("empty value or layout");
+					}
+
+					return DateTime.ParseExact(value, layout, null);
+				}
+				default: {
+					throw new UnreachableException();
+				}
+			}
 		}
 	}
 }

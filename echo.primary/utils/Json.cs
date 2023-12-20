@@ -15,9 +15,7 @@ class ColorConverter : JsonConverter<Color> {
 }
 
 public static class JSON {
-	private static readonly List<JsonConverter> Converters = new() {
-		new ColorConverter()
-	};
+	private static readonly List<JsonConverter> Converters = [new ColorConverter()];
 
 	public static void AddCustomConverter(JsonConverter converter) {
 		Converters.Add(converter);
