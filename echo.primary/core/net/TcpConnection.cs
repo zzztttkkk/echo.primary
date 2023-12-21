@@ -37,15 +37,15 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		}
 	}
 
-	public async Task<int> Read(byte[] buf, int timeoutmills) {
+	public async Task<int> Read(byte[] buf, int timeoutMills) {
 		if (_closed || _stream == null) return -1;
-		if (timeoutmills < 0) {
+		if (timeoutMills < 0) {
 			return await Read(buf);
 		}
 
 		var cts = new CancellationTokenSource();
 		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
-		_ = Task.Delay(timeoutmills).ContinueWith(t => { cts.Cancel(); });
+		_ = Task.Delay(timeoutMills).ContinueWith(t => { cts.Cancel(); });
 
 		try {
 			return await _stream.ReadAsync(buf, cts.Token);
@@ -65,13 +65,13 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		return true;
 	}
 
-	public async Task<bool> ReadExactly(byte[] buf, int timeoutmills) {
+	public async Task<bool> ReadExactly(byte[] buf, int timeoutMills) {
 		if (_closed || _stream == null) return false;
-		if (timeoutmills < 1) return await ReadExactly(buf);
+		if (timeoutMills < 1) return await ReadExactly(buf);
 
 		var cts = new CancellationTokenSource();
 		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
-		_ = Task.Delay(timeoutmills).ContinueWith(t => { cts.Cancel(); });
+		_ = Task.Delay(timeoutMills).ContinueWith(t => { cts.Cancel(); });
 
 		try {
 			await _stream.ReadExactlyAsync(buf, cts.Token);

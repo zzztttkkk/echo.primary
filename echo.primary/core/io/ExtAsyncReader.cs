@@ -3,14 +3,19 @@ using echo.primary.utils;
 
 namespace echo.primary.core.io;
 
-public class ExtAsyncReader(IAsyncReader src, int tmpcap = 4096, int readsize = 512) {
-	private readonly BytesBuffer tmp = new(tmpcap);
-	private readonly byte[] rbuf = new byte[readsize];
+public class ExtAsyncReader(
+	IAsyncReader src,
+	int tmpCap = 4096,
+	int readSize = 512,
+	int srcReadSize = 512
+) : IAsyncReader {
+	private readonly BytesBuffer tmp = new(tmpCap);
+	private readonly byte[] rbuf = new byte[srcReadSize];
 
-	private async Task EnsureTmpCanRead(int timeoutmills) {
+	private async Task EnsureTmpCanRead(int timeoutMills) {
 		if (tmp.Stream.Position < tmp.Stream.Length) return;
 
-		var rl = await src.Read(rbuf, timeoutmills);
+		var rl = await src.Read(rbuf, timeoutMills);
 		if (rl < 1) {
 			throw new Exception("empty read from src");
 		}
@@ -20,7 +25,15 @@ public class ExtAsyncReader(IAsyncReader src, int tmpcap = 4096, int readsize = 
 		tmp.Stream.Position = 0;
 	}
 
-	public async Task<int> Read(byte[] buf, int timeoutMills = 0) {
+	public async Task<int> Read(byte[] buf) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return await src.Read(buf);
+		}
+
+		return tmp.Reader.Read(buf);
+	}
+
+	public async Task<int> Read(byte[] buf, int timeoutMills) {
 		if (tmp.Stream.Position >= tmp.Stream.Length) {
 			return await src.Read(buf, timeoutMills);
 		}
@@ -28,18 +41,28 @@ public class ExtAsyncReader(IAsyncReader src, int tmpcap = 4096, int readsize = 
 		return tmp.Reader.Read(buf);
 	}
 
+	public Task<bool> ReadExactly(byte[] buf) {
+		throw new NotImplementedException();
+	}
+
+	public Task<bool> ReadExactly(byte[] buf, int timeoutMills) {
+		throw new NotImplementedException();
+	}
+
 	public async Task ReadUntil(MemoryStream ms, byte target, int timeoutMills = 0, int maxBytesSize = 0) {
+		ms.Position = 0;
+
 		var begin = Time.unixmills();
 		while (true) {
-			var remainmills = -1;
+			var remainMills = -1;
 			if (timeoutMills > 0) {
-				remainmills = timeoutMills - (int)(Time.unixmills() - begin);
-				if (remainmills < 0) {
+				remainMills = timeoutMills - (int)(Time.unixmills() - begin);
+				if (remainMills < 0) {
 					throw new Exception("read timeout");
 				}
 			}
 
-			await EnsureTmpCanRead(remainmills);
+			await EnsureTmpCanRead(remainMills);
 
 			var rl = tmp.Reader.Read(rbuf);
 			if (rl < 1) {
@@ -61,18 +84,17 @@ public class ExtAsyncReader(IAsyncReader src, int tmpcap = 4096, int readsize = 
 			}
 
 			ms.Write(rbuf.AsSpan()[..(idx + 1)]);
-			tmp.Stream.Seek(-idx, SeekOrigin.Current);
+			tmp.Stream.Seek(idx - rl + 1, SeekOrigin.Current);
 			break;
 		}
 	}
 
-	public Task<string> ReadLine(int caphit, int timeoutMills = 0, int maxBytesSize = 0) {
-		return ReadLine(new MemoryStream(caphit), timeoutMills, maxBytesSize);
+	public Task<string> ReadLine(int capHit, int timeoutMills = 0, int maxBytesSize = 0) {
+		return ReadLine(new MemoryStream(capHit), timeoutMills, maxBytesSize);
 	}
 
-	public async Task<string> ReadLine(MemoryStream ms, int timeoutMills = 0, int maxBytesSize = 0) {
-		ms.Position = 0;
-		await ReadUntil(ms, (byte)'\n', timeoutMills: timeoutMills, maxBytesSize: maxBytesSize);
-		return Encoding.UTF8.GetString(ms.GetBuffer().AsSpan()[..(int)ms.Position]);
+	public async Task<string> ReadLine(MemoryStream dst, int timeoutMills = 0, int maxBytesSize = 0) {
+		await ReadUntil(dst, (byte)'\n', timeoutMills: timeoutMills, maxBytesSize: maxBytesSize);
+		return Encoding.UTF8.GetString(dst.GetBuffer().AsSpan()[..(int)dst.Position]);
 	}
 }
