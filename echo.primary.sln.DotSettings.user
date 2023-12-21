@@ -5,6 +5,7 @@
     &lt;TestId&gt;NUnit3x::A6E5E0A4-D239-4A4A-BA92-B291E48DCC67::net8.0::test.IniTest.TestLoad&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;NUnit3x::A6E5E0A4-D239-4A4A-BA92-B291E48DCC67::net8.0::test.LoggingTest.TestX&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;NUnit3x::A6E5E0A4-D239-4A4A-BA92-B291E48DCC67::net8.0::test.LoggingTest.TestColorful&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::A6E5E0A4-D239-4A4A-BA92-B291E48DCC67::net8.0::test.IniTest.TestBuffer&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=loggername/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
