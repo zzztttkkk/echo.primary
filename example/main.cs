@@ -3,6 +3,7 @@ using echo.primary.logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Drawing;
+using echo.primary.core.http;
 
 using var host = new HostBuilder().Build();
 
@@ -32,7 +33,7 @@ var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
 lifetime.ApplicationStarted.Register(() => {
 	server.Start(
-		"0.0.0.0", 8080, () => new TcpEchoProtocol()
+		"0.0.0.0", 8080, () => new V11Protocol()
 	).ContinueWith(
 		t => {
 			if (t.Exception == null) return;
