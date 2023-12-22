@@ -37,5 +37,7 @@ public class TcpEchoProtocol : ITcpProtocol {
 	}
 
 	public void Dispose() {
+		if (Connection == null) return;
+		if (!Connection.IsAlive) return;
 	}
 }

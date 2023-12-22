@@ -5,7 +5,7 @@ using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
-public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader {
+public partial class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader {
 	private SslStream? _sslStream;
 	private bool _closed;
 	private ITcpProtocol? _protocol;
@@ -16,92 +16,20 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 
 	public bool IsAlive => !_closed && Socket.Connected;
 
+	private void EnsureAlive() {
+		if (_closed || _stream == null) {
+			throw new Exception("conn is not alive");
+		}
+	}
+
 	public async Task Write(byte[] v) {
-		if (_closed || _stream == null) return;
-		await _stream.WriteAsync(v);
+		EnsureAlive();
+		await _stream!.WriteAsync(v);
 	}
 
 	public Task Flush() {
-		if (_closed || _stream == null) return Task.CompletedTask;
-		return _stream.FlushAsync();
-	}
-
-	public async Task<int> Read(byte[] buf) {
-		if (_closed || _stream == null) return -1;
-		try {
-			return await _stream.ReadAsync(buf);
-		}
-		catch (Exception e) {
-			Close(e);
-			return -1;
-		}
-	}
-
-	public async Task<int> Read(byte[] buf, int timeoutMills) {
-		if (_closed || _stream == null) return -1;
-		if (timeoutMills < 0) {
-			return await Read(buf);
-		}
-
-		var cts = new CancellationTokenSource();
-		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
-		_ = Task.Delay(timeoutMills).ContinueWith(t => { cts.Cancel(); });
-
-		try {
-			return await _stream.ReadAsync(buf, cts.Token);
-		}
-		catch (Exception e) {
-			Close(e);
-			return -1;
-		}
-		finally {
-			cts.Dispose();
-		}
-	}
-
-	public async Task<bool> ReadExactly(byte[] buf) {
-		if (_closed || _stream == null) return false;
-		await _stream.ReadExactlyAsync(buf);
-		return true;
-	}
-
-	public async Task<bool> ReadExactly(byte[] buf, int timeoutMills) {
-		if (_closed || _stream == null) return false;
-		if (timeoutMills < 1) return await ReadExactly(buf);
-
-		var cts = new CancellationTokenSource();
-		// ReSharper disable AccessToDisposedClosure MethodSupportsCancellation
-		_ = Task.Delay(timeoutMills).ContinueWith(t => { cts.Cancel(); });
-
-		try {
-			await _stream.ReadExactlyAsync(buf, cts.Token);
-			return true;
-		}
-		catch (Exception e) {
-			Close(e);
-			return false;
-		}
-		finally {
-			cts.Dispose();
-		}
-	}
-
-	public async Task<byte?> ReadOne() {
-		var buf = new byte[1];
-		if (!await ReadExactly(buf)) {
-			return null;
-		}
-
-		return buf[0];
-	}
-
-	public async Task<byte?> ReadOne(int timeoutmills) {
-		var buf = new byte[1];
-		if (!await ReadExactly(buf, timeoutmills)) {
-			return null;
-		}
-
-		return buf[0];
+		EnsureAlive();
+		return _stream!.FlushAsync();
 	}
 
 	private async Task SslHandshake(SslOptions opts, ITcpProtocol protocol) {
@@ -231,4 +159,48 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		Close();
 		GC.SuppressFinalize(this);
 	}
+
+	#region IAsyncReader
+
+	public Task<int> Read(byte[] buf) {
+		throw new NotImplementedException();
+	}
+
+	public Task<int> Read(Memory<byte> buf) {
+		throw new NotImplementedException();
+	}
+
+	public Task<int> Read(byte[] buf, int timeoutMills) {
+		throw new NotImplementedException();
+	}
+
+	public Task<int> Read(Memory<byte> buf, int timeoutMills) {
+		throw new NotImplementedException();
+	}
+
+	public Task ReadExactly(Memory<byte> buf) {
+		throw new NotImplementedException();
+	}
+
+	public Task ReadExactly(Memory<byte> buf, int timeoutMills) {
+		throw new NotImplementedException();
+	}
+
+	public Task<byte> ReadByte() {
+		throw new NotImplementedException();
+	}
+
+	public Task<byte> ReadByte(int timeoutMills) {
+		throw new NotImplementedException();
+	}
+
+	public Task<int> ReadAtLeast(Memory<byte> buf, int minimumBytes, bool throwWhenEnd = true) {
+		throw new NotImplementedException();
+	}
+
+	public Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true) {
+		throw new NotImplementedException();
+	}
+
+	#endregion IAsyncReader
 }

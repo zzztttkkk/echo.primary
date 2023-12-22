@@ -33,7 +33,7 @@ var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
 lifetime.ApplicationStarted.Register(() => {
 	server.Start(
-		"0.0.0.0", 8080, () => new V11Protocol()
+		"0.0.0.0", 8080, () => new Ver11Protocol()
 	).ContinueWith(
 		t => {
 			if (t.Exception == null) return;

@@ -4,7 +4,7 @@ using echo.primary.core.net;
 
 namespace echo.primary.core.h2tp;
 
-public class V11Protocol : ITcpProtocol {
+public class Ver11Protocol : ITcpProtocol {
 	public void Dispose() {
 	}
 

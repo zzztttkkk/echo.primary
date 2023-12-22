@@ -10,3 +10,4 @@ riderModule.iml
 *.dll
 *.so
 *.pfx
+/echo.primary/generated
