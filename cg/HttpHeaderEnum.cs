@@ -9,20 +9,7 @@ namespace cg {
 		}
 
 		public void Execute(GeneratorExecutionContext context) {
-			/*
-			 * JSON.stringify(
-			 *		Array.from(document.querySelectorAll("table tbody tr"))
-			 *			.filter(v => Array.from(v.querySelectorAll("td")).length >= 3)
-			 *			.map(
-			 *				v => {
-			 *					var tds = Array.from(v.querySelectorAll("td"));
-			 *					return {name: encodeURI(tds[0].innerHTML), desc: encodeURI(tds[1].innerHTML), exa: encodeURI(tds[2].innerHTML) }};
-			 *			)
-			 * )
-			 */
-			
-			
-
+			System.Diagnostics.Process.Start("python ");
 		}
 	}
 }
