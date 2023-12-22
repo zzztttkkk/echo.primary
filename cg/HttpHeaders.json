@@ -1,0 +1,572 @@
+﻿[
+  {
+    "name": "A-IM",
+    "desc": "Acceptable%20instance-manipulations%20for%20the%20request.%3Csup%20id=%22cite_ref-rfc3229_11-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc3229-11%22%3E%5B11%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EA-IM:%20feed%3C/code%3E"
+  },
+  {
+    "name": "Accept",
+    "desc": "%3Ca%20href=%22/wiki/Media_type%22%20title=%22Media%20type%22%3EMedia%20type(s)%3C/a%3E%20that%20is/are%20acceptable%20for%20the%20response.%20See%20%3Ca%20href=%22/wiki/Content_negotiation%22%20title=%22Content%20negotiation%22%3EContent%20negotiation%3C/a%3E.",
+    "exa": "%3Ccode%3EAccept:%20text/html%3C/code%3E"
+  },
+  {
+    "name": "Accept-Charset",
+    "desc": "Character%20sets%20that%20are%20acceptable.",
+    "exa": "%3Ccode%3EAccept-Charset:%20utf-8%3C/code%3E"
+  },
+  {
+    "name": "Accept-Datetime",
+    "desc": "Acceptable%20version%20in%20time.",
+    "exa": "%3Ccode%3EAccept-Datetime:%20Thu,%2031%20May%202007%2020:35:00%20GMT%3C/code%3E"
+  },
+  {
+    "name": "Accept-Encoding",
+    "desc": "List%20of%20acceptable%20encodings.%20See%20%3Ca%20href=%22/wiki/HTTP_compression%22%20title=%22HTTP%20compression%22%3EHTTP%20compression%3C/a%3E.",
+    "exa": "%3Ccode%3EAccept-Encoding:%20gzip,%20deflate%3C/code%3E"
+  },
+  {
+    "name": "Accept-Language",
+    "desc": "List%20of%20acceptable%20human%20languages%20for%20response.%20See%20%3Ca%20href=%22/wiki/Content_negotiation%22%20title=%22Content%20negotiation%22%3EContent%20negotiation%3C/a%3E.",
+    "exa": "%3Ccode%3EAccept-Language:%20en-US%3C/code%3E"
+  },
+  {
+    "name": "%3Cspan%20class=%22nowrap%22%3EAccess-Control-Request-Method,%3Cbr%3EAccess-Control-Request-Headers%3C/span%3E%3Csup%20id=%22cite_ref-CORS_12-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-CORS-12%22%3E%5B12%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Initiates%20a%20request%20for%20%3Ca%20href=%22/wiki/Cross-origin_resource_sharing%22%20title=%22Cross-origin%20resource%20sharing%22%3Ecross-origin%20resource%20sharing%3C/a%3E%20with%20%3Ca%20href=%22#origin-request-header%22%3EOrigin%3C/a%3E%20(below).",
+    "exa": "%3Ccode%3EAccess-Control-Request-Method:%20GET%3C/code%3E"
+  },
+  {
+    "name": "Authorization",
+    "desc": "Authentication%20credentials%20for%20%3Ca%20href=%22/wiki/Basic_access_authentication%22%20title=%22Basic%20access%20authentication%22%3EHTTP%20authentication%3C/a%3E.",
+    "exa": "%3Ccode%3EAuthorization:%20Basic%20QWxhZGRpbjpvcGVuIHNlc2FtZQ==%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/Cache-Control%22%20class=%22mw-redirect%22%20title=%22Cache-Control%22%3ECache-Control%3C/a%3E",
+    "desc": "Used%20to%20specify%20directives%20that%20%3Ci%3Emust%3C/i%3E%20be%20obeyed%20by%20all%20caching%20mechanisms%20along%20the%20request-response%20chain.",
+    "exa": "%3Ccode%3ECache-Control:%20no-cache%3C/code%3E"
+  },
+  {
+    "name": "Connection",
+    "desc": "Control%20options%20for%20the%20current%20connection%20and%20list%20of%20hop-by-hop%20request%20fields.%3Csup%20id=%22cite_ref-rfc9110_connection_13-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9110_connection-13%22%3E%5B13%5D%3C/a%3E%3C/sup%3E%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EConnection:%20keep-alive%3C/code%3E%0A%3Cp%3E%3Ccode%3E%3Ca%20href=%22/wiki/HTTP/1.1_Upgrade_header%22%20title=%22HTTP/1.1%20Upgrade%20header%22%3EConnection:%20Upgrade%3C/a%3E%3C/code%3E%20%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "Content-Encoding",
+    "desc": "The%20type%20of%20encoding%20used%20on%20the%20data.%20See%20%3Ca%20href=%22/wiki/HTTP_compression%22%20title=%22HTTP%20compression%22%3EHTTP%20compression%3C/a%3E.",
+    "exa": "%3Ccode%3EContent-Encoding:%20gzip%3C/code%3E"
+  },
+  {
+    "name": "Content-Length",
+    "desc": "The%20length%20of%20the%20request%20body%20in%20%3Ca%20href=%22/wiki/Octet_(computing)%22%20title=%22Octet%20(computing)%22%3Eoctets%3C/a%3E%20(8-bit%20bytes).",
+    "exa": "%3Ccode%3EContent-Length:%20348%3C/code%3E"
+  },
+  {
+    "name": "Content-MD5",
+    "desc": "A%20%3Ca%20href=%22/wiki/Base64%22%20title=%22Base64%22%3EBase64%3C/a%3E-encoded%20binary%20%3Ca%20href=%22/wiki/MD5%22%20title=%22MD5%22%3EMD5%3C/a%3E%20sum%20of%20the%20content%20of%20the%20request%20body.",
+    "exa": "%3Ccode%3EContent-MD5:%20Q2hlY2sgSW50ZWdyaXR5IQ==%3C/code%3E"
+  },
+  {
+    "name": "Content-Type",
+    "desc": "The%20%3Ca%20href=%22/wiki/Media_type%22%20title=%22Media%20type%22%3EMedia%20type%3C/a%3E%20of%20the%20body%20of%20the%20request%20(used%20with%20POST%20and%20PUT%20requests).",
+    "exa": "%3Ccode%3EContent-Type:%20application/x-www-form-urlencoded%3C/code%3E"
+  },
+  {
+    "name": "Cookie",
+    "desc": "An%20%3Ca%20href=%22/wiki/HTTP_cookie%22%20title=%22HTTP%20cookie%22%3EHTTP%20cookie%3C/a%3E%20previously%20sent%20by%20the%20server%20with%20%3Ccode%3E%3Ca%20href=%22#innerlink_set-cookie%22%3ESet-Cookie%3C/a%3E%3C/code%3E%20(below).",
+    "exa": "%3Ccode%3ECookie:%20$Version=1;%20Skin=new;%3C/code%3E"
+  },
+  {
+    "name": "Date",
+    "desc": "The%20date%20and%20time%20at%20which%20the%20message%20was%20originated%20(in%20%22HTTP-date%22%20format%20as%20defined%20by%20%3Ca%20href=%22//tools.ietf.org/html/rfc9110#section-5.6.7%22%20class=%22extiw%22%20title=%22rfc:9110%22%3ERFC%209110:%20HTTP%20Semantics,%20section%205.6.7%20%22Date/Time%20Formats%22%3C/a%3E).",
+    "exa": "%3Ccode%3EDate:%20Tue,%2015%20Nov%201994%2008:12:31%20GMT%3C/code%3E"
+  },
+  {
+    "name": "Expect",
+    "desc": "Indicates%20that%20particular%20server%20behaviors%20are%20required%20by%20the%20client.",
+    "exa": "%3Ccode%3EExpect:%20100-continue%3C/code%3E"
+  },
+  {
+    "name": "Forwarded",
+    "desc": "Disclose%20original%20information%20of%20a%20client%20connecting%20to%20a%20web%20server%20through%20an%20HTTP%20proxy.%3Csup%20id=%22cite_ref-16%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-16%22%3E%5B16%5D%3C/a%3E%3C/sup%3E%0A",
+    "exa": "%3Ccode%3EForwarded:%20for=192.0.2.60;proto=http;by=203.0.113.43%3C/code%3E%20%3Ccode%3EForwarded:%20for=192.0.2.43,%20for=198.51.100.17%3C/code%3E"
+  },
+  {
+    "name": "From",
+    "desc": "The%20email%20address%20of%20the%20user%20making%20the%20request.",
+    "exa": "%3Ccode%3EFrom:%20user@example.com%3C/code%3E"
+  },
+  {
+    "name": "Host",
+    "desc": "The%20domain%20name%20of%20the%20server%20(for%20%3Ca%20href=%22/wiki/Virtual_hosting%22%20title=%22Virtual%20hosting%22%3Evirtual%20hosting%3C/a%3E),%20and%20the%20%3Ca%20href=%22/wiki/List_of_TCP_and_UDP_port_numbers%22%20title=%22List%20of%20TCP%20and%20UDP%20port%20numbers%22%3ETCP%20port%3C/a%3E%20number%20on%20which%20the%20server%20is%20listening.%20The%20%3Ca%20href=%22/wiki/Port_(computer_networking)%22%20title=%22Port%20(computer%20networking)%22%3Eport%3C/a%3E%20number%20may%20be%20omitted%20if%20the%20port%20is%20the%20standard%20port%20for%20the%20service%20requested.%0A%3Cp%3EMandatory%20since%20HTTP/1.1.%3Csup%20id=%22cite_ref-17%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-17%22%3E%5B17%5D%3C/a%3E%3C/sup%3E%0AIf%20the%20request%20is%20generated%20directly%20in%20HTTP/2,%20it%20should%20not%20be%20used.%3Csup%20id=%22cite_ref-rfc9113_Request_Pseudo_Header_Fields_18-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_Request_Pseudo_Header_Fields-18%22%3E%5B18%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EHost:%20en.wikipedia.org:8080%3C/code%3E%0A%3Cp%3E%3Ccode%3EHost:%20en.wikipedia.org%3C/code%3E%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "HTTP2-Settings%0A",
+    "desc": "A%20request%20that%20upgrades%20from%20HTTP/1.1%20to%20HTTP/2%20MUST%20include%20exactly%20one%20%3Ccode%3EHTTP2-Settings%3C/code%3E%20header%20field.%20The%20%3Ccode%3EHTTP2-Settings%3C/code%3E%20header%20field%20is%20a%20connection-specific%20header%20field%20that%20includes%20parameters%20that%20govern%20the%20HTTP/2%20connection,%20provided%20in%20anticipation%20of%20the%20server%20accepting%20the%20request%20to%20upgrade.%3Csup%20id=%22cite_ref-19%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-19%22%3E%5B19%5D%3C/a%3E%3C/sup%3E%3Csup%20id=%22cite_ref-20%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-20%22%3E%5B20%5D%3C/a%3E%3C/sup%3E%0A",
+    "exa": "%3Ccode%3EHTTP2-Settings:%20token64%3C/code%3E%0A"
+  },
+  {
+    "name": "If-Match",
+    "desc": "Only%20perform%20the%20action%20if%20the%20client%20supplied%20entity%20matches%20the%20same%20entity%20on%20the%20server.%20This%20is%20mainly%20for%20methods%20like%20PUT%20to%20only%20update%20a%20resource%20if%20it%20has%20not%20been%20modified%20since%20the%20user%20last%20updated%20it.",
+    "exa": "%3Ccode%3EIf-Match:%20%22737060cd8c284d8af7ad3082f209582d%22%3C/code%3E"
+  },
+  {
+    "name": "If-Modified-Since",
+    "desc": "Allows%20a%20%3Ci%3E304%20Not%20Modified%3C/i%3E%20to%20be%20returned%20if%20content%20is%20unchanged.",
+    "exa": "%3Ccode%3EIf-Modified-Since:%20Sat,%2029%20Oct%201994%2019:43:31%20GMT%3C/code%3E"
+  },
+  {
+    "name": "If-None-Match",
+    "desc": "Allows%20a%20%3Ci%3E304%20Not%20Modified%3C/i%3E%20to%20be%20returned%20if%20content%20is%20unchanged,%20see%20%3Ca%20href=%22/wiki/HTTP_ETag%22%20title=%22HTTP%20ETag%22%3EHTTP%20ETag%3C/a%3E.",
+    "exa": "%3Ccode%3EIf-None-Match:%20%22737060cd8c284d8af7ad3082f209582d%22%3C/code%3E"
+  },
+  {
+    "name": "If-Range",
+    "desc": "If%20the%20entity%20is%20unchanged,%20send%20me%20the%20part(s)%20that%20I%20am%20missing;%20otherwise,%20send%20me%20the%20entire%20new%20entity.",
+    "exa": "%3Ccode%3EIf-Range:%20%22737060cd8c284d8af7ad3082f209582d%22%3C/code%3E"
+  },
+  {
+    "name": "If-Unmodified-Since",
+    "desc": "Only%20send%20the%20response%20if%20the%20entity%20has%20not%20been%20modified%20since%20a%20specific%20time.",
+    "exa": "%3Ccode%3EIf-Unmodified-Since:%20Sat,%2029%20Oct%201994%2019:43:31%20GMT%3C/code%3E"
+  },
+  {
+    "name": "Max-Forwards",
+    "desc": "Limit%20the%20number%20of%20times%20the%20message%20can%20be%20forwarded%20through%20proxies%20or%20gateways.",
+    "exa": "%3Ccode%3EMax-Forwards:%2010%3C/code%3E"
+  },
+  {
+    "name": "Origin%3Csup%20id=%22cite_ref-CORS_12-1%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-CORS-12%22%3E%5B12%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Initiates%20a%20request%20for%20%3Ca%20href=%22/wiki/Cross-origin_resource_sharing%22%20title=%22Cross-origin%20resource%20sharing%22%3Ecross-origin%20resource%20sharing%3C/a%3E%20(asks%20server%20for%20%3Ca%20href=%22#access-control-response-headers%22%3EAccess-Control-*%3C/a%3E%20response%20fields).",
+    "exa": "%3Ccode%3EOrigin:%20http://www.example-social-network.com%3C/code%3E"
+  },
+  {
+    "name": "Pragma",
+    "desc": "Implementation-specific%20fields%20that%20may%20have%20various%20effects%20anywhere%20along%20the%20request-response%20chain.",
+    "exa": "%3Ccode%3E%3Ca%20href=%22#Avoiding_caching%22%3EPragma:%20no-cache%3C/a%3E%3C/code%3E"
+  },
+  {
+    "name": "Prefer%0A",
+    "desc": "Allows%20client%20to%20request%20that%20certain%20behaviors%20be%20employed%20by%20a%20server%20while%20processing%20a%20request.%0A",
+    "exa": "%3Ccode%3EPrefer:%20return=representation%3C/code%3E%0A"
+  },
+  {
+    "name": "Proxy-Authorization",
+    "desc": "Authorization%20credentials%20for%20connecting%20to%20a%20proxy.",
+    "exa": "%3Ccode%3EProxy-Authorization:%20Basic%20QWxhZGRpbjpvcGVuIHNlc2FtZQ==%3C/code%3E"
+  },
+  {
+    "name": "%3Cspan%20class=%22anchor%22%20id=%22Range%22%3E%3C/span%3E%20Range",
+    "desc": "Request%20only%20part%20of%20an%20entity.%20%20Bytes%20are%20numbered%20from%200.%20%20See%20%3Ca%20href=%22/wiki/Byte_serving%22%20title=%22Byte%20serving%22%3EByte%20serving%3C/a%3E.",
+    "exa": "%3Ccode%3ERange:%20bytes=500-999%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/HTTP_referer%22%20title=%22HTTP%20referer%22%3EReferer%3C/a%3E%20%5B%3Ci%3E%3Ca%20href=%22/wiki/Sic%22%20title=%22Sic%22%3Esic%3C/a%3E%3C/i%3E%5D",
+    "desc": "This%20is%20the%20address%20of%20the%20previous%20web%20page%20from%20which%20a%20link%20to%20the%20currently%20requested%20page%20was%20followed.%20(The%20word%20%22referrer%22%20has%20been%20misspelled%20in%20the%20RFC%20as%20well%20as%20in%20most%20implementations%20to%20the%20point%20that%20it%20has%20become%20standard%20usage%20and%20is%20considered%20correct%20terminology)",
+    "exa": "%3Ccode%3EReferer:%20http://en.wikipedia.org/wiki/Main_Page%3C/code%3E"
+  },
+  {
+    "name": "TE",
+    "desc": "The%20transfer%20encodings%20the%20user%20agent%20is%20willing%20to%20accept:%20the%20same%20values%20as%20for%20the%20response%20header%20field%20Transfer-Encoding%20can%20be%20used,%20plus%20the%20%22trailers%22%20value%20(related%20to%20the%20%22%3Ca%20href=%22/wiki/Chunked_transfer_encoding%22%20title=%22Chunked%20transfer%20encoding%22%3Echunked%3C/a%3E%22%20transfer%20method)%20to%20notify%20the%20server%20it%20expects%20to%20receive%20additional%20fields%20in%20the%20trailer%20after%20the%20last,%20zero-sized,%20chunk.%0A%3Cp%3EOnly%20%3Ccode%3Etrailers%3C/code%3E%20is%20supported%20in%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-1%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3ETE:%20trailers,%20%3Ca%20href=%22/wiki/Deflate%22%20title=%22Deflate%22%3Edeflate%3C/a%3E%3C/code%3E"
+  },
+  {
+    "name": "Trailer%0A",
+    "desc": "The%20Trailer%20general%20field%20value%20indicates%20that%20the%20given%20set%20of%20header%20fields%20is%20present%20in%20the%20trailer%20of%20a%20message%20encoded%20with%20%3Ca%20href=%22/wiki/Chunked_transfer_coding%22%20class=%22mw-redirect%22%20title=%22Chunked%20transfer%20coding%22%3Echunked%20transfer%20coding%3C/a%3E.%0A",
+    "exa": "%3Ccode%3ETrailer:%20Max-Forwards%3C/code%3E%0A"
+  },
+  {
+    "name": "Transfer-Encoding%0A",
+    "desc": "The%20form%20of%20encoding%20used%20to%20safely%20transfer%20the%20entity%20to%20the%20user.%20%3Ca%20rel=%22nofollow%22%20class=%22external%20text%22%20href=%22https://www.iana.org/assignments/http-parameters%22%3ECurrently%20defined%20methods%3C/a%3E%20are:%20%3Ca%20href=%22/wiki/Chunked_transfer_encoding%22%20title=%22Chunked%20transfer%20encoding%22%3Echunked%3C/a%3E,%20compress,%20deflate,%20gzip,%20identity.%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-2%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3ETransfer-Encoding:%20chunked%3C/code%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/User-Agent%22%20class=%22mw-redirect%22%20title=%22User-Agent%22%3EUser-Agent%3C/a%3E",
+    "desc": "The%20%3Ca%20href=%22/wiki/User_agent_string%22%20class=%22mw-redirect%22%20title=%22User%20agent%20string%22%3Euser%20agent%20string%3C/a%3E%20of%20the%20user%20agent.",
+    "exa": "%3Ccode%3EUser-Agent:%20Mozilla/5.0%20(X11;%20Linux%20x86_64;%20rv:12.0)%20Gecko/20100101%20Firefox/12.0%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/Upgrade_header%22%20class=%22mw-redirect%22%20title=%22Upgrade%20header%22%3EUpgrade%3C/a%3E",
+    "desc": "Ask%20the%20server%20to%20upgrade%20to%20another%20protocol.%0A%3Cp%3EMust%20not%20be%20used%20in%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-3%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EUpgrade:%20h2c,%20HTTPS/1.3,%20IRC/6.9,%20RTA/x11,%20websocket%3C/code%3E"
+  },
+  {
+    "name": "Via",
+    "desc": "Informs%20the%20server%20of%20proxies%20through%20which%20the%20request%20was%20sent.",
+    "exa": "%3Ccode%3EVia:%201.0%20fred,%201.1%20example.com%20(Apache/1.1)%3C/code%3E"
+  },
+  {
+    "name": "Warning",
+    "desc": "A%20general%20warning%20about%20possible%20problems%20with%20the%20entity%20body.",
+    "exa": "%3Ccode%3EWarning:%20199%20Miscellaneous%20warning%3C/code%3E"
+  },
+  {
+    "name": "%3Cspan%20class=%22nowrap%22%3EUpgrade-Insecure-Requests%3C/span%3E%3Csup%20id=%22cite_ref-22%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-22%22%3E%5B22%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Tells%20a%20server%20which%20(presumably%20in%20the%20middle%20of%20a%20HTTP%20-&gt;%20HTTPS%20migration)%20hosts%20mixed%20content%20that%20the%20client%20would%20prefer%20redirection%20to%20HTTPS%20and%20can%20handle%20%3Ccode%3EContent-Security-Policy:%20upgrade-insecure-requests%3C/code%3E%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2%3Csup%20id=%22cite_ref-rfc9113_connection_14-4%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EUpgrade-Insecure-Requests:%201%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Requested-With",
+    "desc": "Mainly%20used%20to%20identify%20%3Ca%20href=%22/wiki/Ajax_(programming)%22%20title=%22Ajax%20(programming)%22%3EAjax%3C/a%3E%20requests%20(most%20%3Ca%20href=%22/wiki/JavaScript_framework%22%20class=%22mw-redirect%22%20title=%22JavaScript%20framework%22%3EJavaScript%20frameworks%3C/a%3E%20send%20this%20field%20with%20value%20of%20%3Ccode%3EXMLHttpRequest%3C/code%3E);%20also%20identifies%20Android%20apps%20using%20WebView%3Csup%20id=%22cite_ref-23%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-23%22%3E%5B23%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3E%20X-Requested-With:%20XMLHttpRequest%3C/code%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/Do_Not_Track%22%20title=%22Do%20Not%20Track%22%3EDNT%3C/a%3E%3Csup%20id=%22cite_ref-24%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-24%22%3E%5B24%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Requests%20a%20web%20application%20to%20disable%20their%20tracking%20of%20a%20user.%20This%20is%20Mozilla's%20version%20of%20the%20X-Do-Not-Track%20header%20field%20(since%20%3Ca%20href=%22/wiki/Mozilla_Firefox_4%22%20class=%22mw-redirect%22%20title=%22Mozilla%20Firefox%204%22%3EFirefox%204.0%3C/a%3E%20Beta%2011).%20%20%3Ca%20href=%22/wiki/Safari_(web_browser)%22%20title=%22Safari%20(web%20browser)%22%3ESafari%3C/a%3E%20and%20%3Ca%20href=%22/wiki/Internet_Explorer_9%22%20title=%22Internet%20Explorer%209%22%3EIE9%3C/a%3E%20also%20have%20support%20for%20this%20field.%3Csup%20id=%22cite_ref-25%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-25%22%3E%5B25%5D%3C/a%3E%3C/sup%3E%20%20On%20March%207,%202011,%20a%20draft%20proposal%20was%20submitted%20to%20IETF.%3Csup%20id=%22cite_ref-26%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-26%22%3E%5B26%5D%3C/a%3E%3C/sup%3E%20The%20%3Ca%20href=%22/wiki/World_Wide_Web_Consortium%22%20title=%22World%20Wide%20Web%20Consortium%22%3EW3C%3C/a%3E%20Tracking%20Protection%20Working%20Group%20is%20producing%20a%20specification.%3Csup%20id=%22cite_ref-27%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-27%22%3E%5B27%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EDNT:%201%3C/code%3E%20(Do%20Not%20Track%20Enabled)%0A%3Cp%3E%3Ccode%3EDNT:%200%3C/code%3E%20(Do%20Not%20Track%20Disabled)%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/X-Forwarded-For%22%20title=%22X-Forwarded-For%22%3EX-Forwarded-For%3C/a%3E%3Csup%20id=%22cite_ref-28%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-28%22%3E%5B28%5D%3C/a%3E%3C/sup%3E",
+    "desc": "A%20%3Ca%20href=%22/wiki/De_facto_standard%22%20title=%22De%20facto%20standard%22%3E%3Ci%3Ede%20facto%3C/i%3E%20standard%3C/a%3E%20for%20identifying%20the%20originating%20IP%20address%20of%20a%20client%20connecting%20to%20a%20web%20server%20through%20an%20HTTP%20proxy%20or%20load%20balancer.%20Superseded%20by%20%3Ci%3EForwarded%3C/i%3E%20header.",
+    "exa": "%3Ccode%3EX-Forwarded-For:%20client1,%20proxy1,%20proxy2%3C/code%3E%0A%3Cp%3E%3Ccode%3EX-Forwarded-For:%20129.78.138.66,%20129.78.64.103%3C/code%3E%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "X-Forwarded-Host%3Csup%20id=%22cite_ref-29%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-29%22%3E%5B29%5D%3C/a%3E%3C/sup%3E",
+    "desc": "A%20%3Ca%20href=%22/wiki/De_facto_standard%22%20title=%22De%20facto%20standard%22%3E%3Ci%3Ede%20facto%3C/i%3E%20standard%3C/a%3E%20for%20identifying%20the%20original%20host%20requested%20by%20the%20client%20in%20the%20%3Ccode%3EHost%3C/code%3E%20HTTP%20request%20header,%20since%20the%20host%20name%20and/or%20port%20of%20the%20reverse%20proxy%20(load%20balancer)%20may%20differ%20from%20the%20origin%20server%20handling%20the%20request.%20Superseded%20by%20%3Ci%3EForwarded%3C/i%3E%20header.",
+    "exa": "%3Ccode%3EX-Forwarded-Host:%20en.wikipedia.org:8080%3C/code%3E%0A%3Cp%3E%3Ccode%3EX-Forwarded-Host:%20en.wikipedia.org%3C/code%3E%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "X-Forwarded-Proto%3Csup%20id=%22cite_ref-30%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-30%22%3E%5B30%5D%3C/a%3E%3C/sup%3E",
+    "desc": "A%20%3Ca%20href=%22/wiki/De_facto_standard%22%20title=%22De%20facto%20standard%22%3E%3Ci%3Ede%20facto%3C/i%3E%20standard%3C/a%3E%20for%20identifying%20the%20originating%20protocol%20of%20an%20HTTP%20request,%20since%20a%20reverse%20proxy%20(or%20a%20load%20balancer)%20may%20communicate%20with%20a%20web%20server%20using%20HTTP%20even%20if%20the%20request%20to%20the%20reverse%20proxy%20is%20HTTPS.%20%20An%20alternative%20form%20of%20the%20header%20(X-ProxyUser-Ip)%20is%20used%20by%20Google%20clients%20talking%20to%20Google%20servers.%20Superseded%20by%20%3Ci%3EForwarded%3C/i%3E%20header.",
+    "exa": "%3Ccode%3EX-Forwarded-Proto:%20https%3C/code%3E%0A"
+  },
+  {
+    "name": "Front-End-Https%3Csup%20id=%22cite_ref-31%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-31%22%3E%5B31%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Non-standard%20header%20field%20used%20by%20Microsoft%20applications%20and%20load-balancers",
+    "exa": "%3Ccode%3EFront-End-Https:%20on%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Http-Method-Override%3Csup%20id=%22cite_ref-32%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-32%22%3E%5B32%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Requests%20a%20web%20application%20to%20override%20the%20method%20specified%20in%20the%20request%20(typically%20POST)%20with%20the%20method%20given%20in%20the%20header%20field%20(typically%20PUT%20or%20DELETE).%20This%20can%20be%20used%20when%20a%20user%20agent%20or%20firewall%20prevents%20PUT%20or%20DELETE%20methods%20from%20being%20sent%20directly%20(note%20that%20this%20is%20either%20a%20bug%20in%20the%20software%20component,%20which%20ought%20to%20be%20fixed,%20or%20an%20intentional%20configuration,%20in%20which%20case%20bypassing%20it%20may%20be%20the%20wrong%20thing%20to%20do).",
+    "exa": "%3Ccode%3EX-HTTP-Method-Override:%20DELETE%3C/code%3E%0A"
+  },
+  {
+    "name": "X-ATT-DeviceId%3Csup%20id=%22cite_ref-33%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-33%22%3E%5B33%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Allows%20easier%20parsing%20of%20the%20MakeModel/Firmware%20that%20is%20usually%20found%20in%20the%20User-Agent%20String%20of%20AT&amp;T%20Devices",
+    "exa": "%3Ccode%3EX-Att-Deviceid:%20GT-P7320/P7320XXLPG%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Wap-Profile%3Csup%20id=%22cite_ref-34%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-34%22%3E%5B34%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Links%20to%20an%20XML%20file%20on%20the%20Internet%20with%20a%20full%20description%20and%20details%20about%20the%20device%20currently%20connecting.%20In%20the%20example%20to%20the%20right%20is%20an%20XML%20file%20for%20an%20AT&amp;T%20Samsung%20Galaxy%20S2.",
+    "exa": "%3Ccode%3Ex-wap-profile:%20%3Ca%20rel=%22nofollow%22%20class=%22external%20free%22%20href=%22http://wap.samsungmobile.com/uaprof/SGH-I777.xml%22%3Ehttp://wap.samsungmobile.com/uaprof/SGH-I777.xml%3C/a%3E%3C/code%3E%0A"
+  },
+  {
+    "name": "Proxy-Connection%3Csup%20id=%22cite_ref-35%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-35%22%3E%5B35%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Implemented%20as%20a%20misunderstanding%20of%20the%20HTTP%20specifications.%20Common%20because%20of%20mistakes%20in%20implementations%20of%20early%20HTTP%20versions.%20Has%20exactly%20the%20same%20functionality%20as%20standard%20Connection%20field.%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-5%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EProxy-Connection:%20keep-alive%3C/code%3E%0A"
+  },
+  {
+    "name": "X-UIDH%3Csup%20id=%22cite_ref-36%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-36%22%3E%5B36%5D%3C/a%3E%3C/sup%3E%3Csup%20id=%22cite_ref-37%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-37%22%3E%5B37%5D%3C/a%3E%3C/sup%3E%3Csup%20id=%22cite_ref-38%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-38%22%3E%5B38%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Server-side%20%3Ca%20href=%22/wiki/Deep_packet_inspection%22%20title=%22Deep%20packet%20inspection%22%3Edeep%20packet%20inspection%3C/a%3E%20of%20a%20unique%20ID%20identifying%20customers%20of%20%3Ca%20href=%22/wiki/Verizon_Wireless%22%20class=%22mw-redirect%22%20title=%22Verizon%20Wireless%22%3EVerizon%20Wireless%3C/a%3E;%20also%20known%20as%20%22perma-cookie%22%20or%20%22supercookie%22",
+    "exa": "%3Ccode%3EX-UIDH:%20...%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Csrf-Token%3Csup%20id=%22cite_ref-39%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-39%22%3E%5B39%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Used%20to%20prevent%20%3Ca%20href=%22/wiki/Cross-site_request_forgery%22%20title=%22Cross-site%20request%20forgery%22%3Ecross-site%20request%20forgery%3C/a%3E.%20Alternative%20header%20names%20are:%20%3Ccode%3EX-CSRFToken%3C/code%3E%3Csup%20id=%22cite_ref-40%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-40%22%3E%5B40%5D%3C/a%3E%3C/sup%3E%20and%20%3Ccode%3EX-XSRF-TOKEN%3C/code%3E%3Csup%20id=%22cite_ref-41%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-41%22%3E%5B41%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EX-Csrf-Token:%20i8XNjC4b8KVok4uw5RftR38Wgp2BFwql%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Request-ID,%3Csup%20id=%22cite_ref-stackoverflow2_42-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-stackoverflow2-42%22%3E%5Bstackoverflow2%201%5D%3C/a%3E%3C/sup%3E%3Csup%20id=%22cite_ref-43%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-43%22%3E%5B42%5D%3C/a%3E%3C/sup%3E%0A%3Cp%3EX-Correlation-ID,%3Csup%20id=%22cite_ref-44%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-44%22%3E%5B43%5D%3C/a%3E%3C/sup%3E%0ACorrelation-ID%3Csup%20id=%22cite_ref-45%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-45%22%3E%5B44%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "desc": "Correlates%20HTTP%20requests%20between%20a%20client%20and%20server.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Request-ID:%20f058ebd6-02f7-4d3f-942e-904344e8cde5%3C/code%3E%0A"
+  },
+  {
+    "name": "Save-Data%3Csup%20id=%22cite_ref-46%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-46%22%3E%5B45%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "The%20Save-Data%20client%20hint%20request%20header%20available%20in%20Chrome,%20Opera,%20and%20Yandex%20browsers%20lets%20developers%20deliver%20lighter,%20faster%20applications%20to%20users%20who%20opt-in%20to%20data%20saving%20mode%20in%20their%20browser.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3ESave-Data:%20on%3C/code%3E%0A"
+  },
+  {
+    "name": "Sec-GPC%3Csup%20id=%22cite_ref-47%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-47%22%3E%5B46%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "The%20Sec-GPC%20(%3Ca%20href=%22/wiki/Do_Not_Track#Global_Privacy_Control%22%20title=%22Do%20Not%20Track%22%3EGlobal%20Privacy%20Control%3C/a%3E)%20request%20header%20indicates%20whether%20the%20user%20consents%20to%20a%20website%20or%20service%20selling%20or%20sharing%20their%20personal%20information%20with%20third%20parties.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3ESec-GPC:%201%3C/code%3E%0A"
+  },
+  {
+    "name": "Accept-CH",
+    "desc": "Requests%20%3Ca%20href=%22/wiki/HTTP_Client_Hints%22%20title=%22HTTP%20Client%20Hints%22%3EHTTP%20Client%20Hints%3C/a%3E",
+    "exa": "%3Ccode%3EAccept-CH:%20UA,%20Platform%3C/code%3E"
+  },
+  {
+    "name": "%3Cspan%20class=%22nowrap%22%3EAccess-Control-Allow-Origin,%3Cbr%3EAccess-Control-Allow-Credentials,%3Cbr%3EAccess-Control-Expose-Headers,%3Cbr%3EAccess-Control-Max-Age,%3Cbr%3EAccess-Control-Allow-Methods,%3Cbr%3EAccess-Control-Allow-Headers%3C/span%3E%3Csup%20id=%22cite_ref-CORS_12-2%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-CORS-12%22%3E%5B12%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "Specifying%20which%20web%20sites%20can%20participate%20in%20%3Ca%20href=%22/wiki/Cross-origin_resource_sharing%22%20title=%22Cross-origin%20resource%20sharing%22%3Ecross-origin%20resource%20sharing%3C/a%3E",
+    "exa": "%3Ccode%3EAccess-Control-Allow-Origin:%20*%3C/code%3E"
+  },
+  {
+    "name": "Accept-Patch%3Csup%20id=%22cite_ref-48%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-48%22%3E%5B47%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Specifies%20which%20patch%20document%20formats%20this%20server%20supports",
+    "exa": "%3Ccode%3EAccept-Patch:%20text/example;charset=utf-8%3C/code%3E"
+  },
+  {
+    "name": "Accept-Ranges",
+    "desc": "What%20partial%20content%20range%20types%20this%20server%20supports%20via%20%3Ca%20href=%22/wiki/Byte_serving%22%20title=%22Byte%20serving%22%3Ebyte%20serving%3C/a%3E",
+    "exa": "%3Ccode%3EAccept-Ranges:%20bytes%3C/code%3E"
+  },
+  {
+    "name": "Age",
+    "desc": "The%20age%20the%20object%20has%20been%20in%20a%20%3Ca%20href=%22/wiki/Proxy_cache%22%20class=%22mw-redirect%22%20title=%22Proxy%20cache%22%3Eproxy%20cache%3C/a%3E%20in%20seconds",
+    "exa": "%3Ccode%3EAge:%2012%3C/code%3E"
+  },
+  {
+    "name": "Allow",
+    "desc": "Valid%20methods%20for%20a%20specified%20resource.%20To%20be%20used%20for%20a%20%3Ci%3E405%20Method%20not%20allowed%3C/i%3E",
+    "exa": "%3Ccode%3EAllow:%20GET,%20HEAD%3C/code%3E"
+  },
+  {
+    "name": "Alt-Svc%3Csup%20id=%22cite_ref-49%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-49%22%3E%5B48%5D%3C/a%3E%3C/sup%3E",
+    "desc": "A%20server%20uses%20%22Alt-Svc%22%20header%20(meaning%20Alternative%20Services)%20to%20indicate%20that%20its%20resources%20can%20also%20be%20accessed%20at%20a%20different%20network%20location%20(host%20or%20port)%20or%20using%20a%20different%20protocol%0A%3Cp%3EWhen%20using%20HTTP/2,%20servers%20should%20instead%20send%20an%20ALTSVC%20frame.%20%3Csup%20id=%22cite_ref-50%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-50%22%3E%5B49%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EAlt-Svc:%20http/1.1=%22http2.example.com:8001%22;%20ma=7200%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/Cache-Control%22%20class=%22mw-redirect%22%20title=%22Cache-Control%22%3ECache-Control%3C/a%3E",
+    "desc": "Tells%20all%20caching%20mechanisms%20from%20server%20to%20client%20whether%20they%20may%20cache%20this%20object.%20It%20is%20measured%20in%20seconds",
+    "exa": "%3Ccode%3ECache-Control:%20max-age=3600%3C/code%3E"
+  },
+  {
+    "name": "Connection",
+    "desc": "Control%20options%20for%20the%20current%20connection%20and%20list%20of%20hop-by-hop%20response%20fields.%3Csup%20id=%22cite_ref-rfc9110_connection_13-1%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9110_connection-13%22%3E%5B13%5D%3C/a%3E%3C/sup%3E%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-6%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EConnection:%20close%3C/code%3E"
+  },
+  {
+    "name": "Content-Disposition%3Csup%20id=%22cite_ref-51%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-51%22%3E%5B50%5D%3C/a%3E%3C/sup%3E",
+    "desc": "An%20opportunity%20to%20raise%20a%20%22File%20Download%22%20dialogue%20box%20for%20a%20known%20MIME%20type%20with%20binary%20format%20or%20suggest%20a%20filename%20for%20dynamic%20content.%20Quotes%20are%20necessary%20with%20special%20characters.",
+    "exa": "%3Ccode%3EContent-Disposition:%20attachment;%20filename=%22fname.ext%22%3C/code%3E"
+  },
+  {
+    "name": "Content-Encoding",
+    "desc": "The%20type%20of%20encoding%20used%20on%20the%20data.%20See%20%3Ca%20href=%22/wiki/HTTP_compression%22%20title=%22HTTP%20compression%22%3EHTTP%20compression%3C/a%3E.",
+    "exa": "%3Ccode%3EContent-Encoding:%20gzip%3C/code%3E"
+  },
+  {
+    "name": "Content-Language",
+    "desc": "The%20natural%20language%20or%20languages%20of%20the%20intended%20audience%20for%20the%20enclosed%20content%3Csup%20id=%22cite_ref-52%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-52%22%3E%5B51%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EContent-Language:%20da%3C/code%3E"
+  },
+  {
+    "name": "Content-Length",
+    "desc": "The%20length%20of%20the%20response%20body%20in%20%3Ca%20href=%22/wiki/Octet_(computing)%22%20title=%22Octet%20(computing)%22%3Eoctets%3C/a%3E%20(8-bit%20bytes)",
+    "exa": "%3Ccode%3EContent-Length:%20348%3C/code%3E"
+  },
+  {
+    "name": "Content-Location",
+    "desc": "An%20alternate%20location%20for%20the%20returned%20data",
+    "exa": "%3Ccode%3EContent-Location:%20/index.htm%3C/code%3E"
+  },
+  {
+    "name": "Content-MD5",
+    "desc": "A%20%3Ca%20href=%22/wiki/Base64%22%20title=%22Base64%22%3EBase64%3C/a%3E-encoded%20binary%20%3Ca%20href=%22/wiki/MD5%22%20title=%22MD5%22%3EMD5%3C/a%3E%20sum%20of%20the%20content%20of%20the%20response",
+    "exa": "%3Ccode%3EContent-MD5:%20Q2hlY2sgSW50ZWdyaXR5IQ==%3C/code%3E"
+  },
+  {
+    "name": "Content-Range",
+    "desc": "Where%20in%20a%20full%20body%20message%20this%20partial%20message%20belongs",
+    "exa": "%3Ccode%3EContent-Range:%20bytes%2021010-47021/47022%3C/code%3E"
+  },
+  {
+    "name": "Content-Type",
+    "desc": "The%20%3Ca%20href=%22/wiki/MIME_type%22%20class=%22mw-redirect%22%20title=%22MIME%20type%22%3EMIME%20type%3C/a%3E%20of%20this%20content",
+    "exa": "%3Ccode%3EContent-Type:%20text/html;%20charset=utf-8%3C/code%3E"
+  },
+  {
+    "name": "Date",
+    "desc": "The%20date%20and%20time%20that%20the%20message%20was%20sent%20(in%20%22HTTP-date%22%20format%20as%20defined%20by%20RFC%209110)",
+    "exa": "%3Ccode%3EDate:%20Tue,%2015%20Nov%201994%2008:12:31%20GMT%3C/code%3E"
+  },
+  {
+    "name": "Delta-Base",
+    "desc": "Specifies%20the%20delta-encoding%20entity%20tag%20of%20the%20response.%3Csup%20id=%22cite_ref-rfc3229_11-1%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc3229-11%22%3E%5B11%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EDelta-Base:%20%22abc%22%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/HTTP_ETag%22%20title=%22HTTP%20ETag%22%3EETag%3C/a%3E",
+    "desc": "An%20identifier%20for%20a%20specific%20version%20of%20a%20resource,%20often%20a%20%3Ca%20href=%22/wiki/Message_digest%22%20class=%22mw-redirect%22%20title=%22Message%20digest%22%3Emessage%20digest%3C/a%3E",
+    "exa": "%3Ccode%3EETag:%20%22737060cd8c284d8af7ad3082f209582d%22%3C/code%3E"
+  },
+  {
+    "name": "Expires",
+    "desc": "Gives%20the%20date/time%20after%20which%20the%20response%20is%20considered%20stale%20(in%20%22HTTP-date%22%20format%20as%20defined%20by%20RFC%209110)",
+    "exa": "%3Ccode%3EExpires:%20Thu,%2001%20Dec%201994%2016:00:00%20GMT%3C/code%3E"
+  },
+  {
+    "name": "IM",
+    "desc": "Instance-manipulations%20applied%20to%20the%20response.%3Csup%20id=%22cite_ref-rfc3229_11-2%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc3229-11%22%3E%5B11%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3EIM:%20feed%3C/code%3E"
+  },
+  {
+    "name": "Last-Modified",
+    "desc": "The%20last%20modified%20date%20for%20the%20requested%20object%20(in%20%22HTTP-date%22%20format%20as%20defined%20by%20RFC%209110)",
+    "exa": "%3Ccode%3ELast-Modified:%20Tue,%2015%20Nov%201994%2012:45:26%20GMT%3C/code%3E"
+  },
+  {
+    "name": "Link",
+    "desc": "Used%20to%20express%20a%20typed%20relationship%20with%20another%20resource,%20where%20the%20relation%20type%20is%20defined%20by%20RFC%205988",
+    "exa": "%3Ccode%3ELink:%20&lt;/feed&gt;;%20rel=%22alternate%22%3C/code%3E%3Csup%20id=%22cite_ref-google_canonical_53-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-google_canonical-53%22%3E%5B52%5D%3C/a%3E%3C/sup%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/HTTP_location%22%20title=%22HTTP%20location%22%3ELocation%3C/a%3E",
+    "desc": "Used%20in%20%3Ca%20href=%22/wiki/URL_redirection%22%20title=%22URL%20redirection%22%3Eredirection%3C/a%3E,%20or%20when%20a%20new%20resource%20has%20been%20created.%0A",
+    "exa": "%0A%3Cul%3E%3Cli%3EExample%201:%20%3Ccode%3ELocation:%20http://www.w3.org/pub/WWW/People.html%3C/code%3E%3C/li%3E%0A%3Cli%3EExample%202:%20%3Ccode%3ELocation:%20/pub/WWW/People.html%3C/code%3E%3C/li%3E%3C/ul%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/P3P%22%20title=%22P3P%22%3EP3P%3C/a%3E",
+    "desc": "This%20field%20is%20supposed%20to%20set%20%3Ca%20href=%22/wiki/P3P%22%20title=%22P3P%22%3EP3P%3C/a%3E%20policy,%20in%20the%20form%20of%20%3Ccode%3EP3P:CP=%22your_compact_policy%22%3C/code%3E.%20However,%20P3P%20did%20not%20take%20off,%3Csup%20id=%22cite_ref-54%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-54%22%3E%5B53%5D%3C/a%3E%3C/sup%3E%20most%20browsers%20have%20never%20fully%20implemented%20it,%20a%20lot%20of%20websites%20set%20this%20field%20with%20fake%20policy%20text,%20that%20was%20enough%20to%20fool%20browsers%20the%20existence%20of%20P3P%20policy%20and%20grant%20permissions%20for%20%3Ca%20href=%22/wiki/Third_party_cookie%22%20class=%22mw-redirect%22%20title=%22Third%20party%20cookie%22%3Ethird%20party%20cookies%3C/a%3E.",
+    "exa": "%3Ccode%3EP3P:%20CP=%22This%20is%20not%20a%20P3P%20policy!%20See%20https://en.wikipedia.org/wiki/Special:CentralAutoLogin/P3P%20for%20more%20info.%22%3C/code%3E"
+  },
+  {
+    "name": "Pragma",
+    "desc": "Implementation-specific%20fields%20that%20may%20have%20various%20effects%20anywhere%20along%20the%20request-response%20chain.",
+    "exa": "%3Ccode%3EPragma:%20no-cache%3C/code%3E"
+  },
+  {
+    "name": "Preference-Applied%0A",
+    "desc": "Indicates%20which%20Prefer%20tokens%20were%20honored%20by%20the%20server%20and%20applied%20to%20the%20processing%20of%20the%20request.%0A",
+    "exa": "%3Ccode%3EPreference-Applied:%20return=representation%3C/code%3E%0A"
+  },
+  {
+    "name": "Proxy-Authenticate",
+    "desc": "Request%20authentication%20to%20access%20the%20proxy.",
+    "exa": "%3Ccode%3EProxy-Authenticate:%20Basic%3C/code%3E"
+  },
+  {
+    "name": "Public-Key-Pins%3Csup%20id=%22cite_ref-55%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-55%22%3E%5B54%5D%3C/a%3E%3C/sup%3E",
+    "desc": "%3Ca%20href=%22/wiki/HTTP_Public_Key_Pinning%22%20title=%22HTTP%20Public%20Key%20Pinning%22%3EHTTP%20Public%20Key%20Pinning%3C/a%3E,%20announces%20hash%20of%20website's%20authentic%20%3Ca%20href=%22/wiki/Transport_Layer_Security%22%20title=%22Transport%20Layer%20Security%22%3ETLS%3C/a%3E%20certificate",
+    "exa": "%3Ccode%3EPublic-Key-Pins:%20max-age=2592000;%20pin-sha256=%22E9CZ9INDbd+2eRQozYqqbQ2yXLVKB9+xcprMF+44U1g=%22;%3C/code%3E"
+  },
+  {
+    "name": "Retry-After",
+    "desc": "If%20an%20entity%20is%20temporarily%20unavailable,%20this%20instructs%20the%20client%20to%20try%20again%20later.%20Value%20could%20be%20a%20specified%20period%20of%20time%20(in%20seconds)%20or%20a%20HTTP-date.%3Csup%20id=%22cite_ref-56%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-56%22%3E%5B55%5D%3C/a%3E%3C/sup%3E%0A",
+    "exa": "%0A%3Cul%3E%3Cli%3EExample%201:%20%3Ccode%3ERetry-After:%20120%3C/code%3E%3C/li%3E%0A%3Cli%3EExample%202:%20%3Ccode%3ERetry-After:%20Fri,%2007%20Nov%202014%2023:59:59%20GMT%3C/code%3E%3C/li%3E%3C/ul%3E%0A"
+  },
+  {
+    "name": "Server",
+    "desc": "A%20name%20for%20the%20server",
+    "exa": "%3Ccode%3EServer:%20Apache/2.4.1%20(Unix)%3C/code%3E"
+  },
+  {
+    "name": "Set-Cookie",
+    "desc": "An%20%3Ca%20href=%22/wiki/HTTP_cookie%22%20title=%22HTTP%20cookie%22%3EHTTP%20cookie%3C/a%3E",
+    "exa": "%3Ccode%3ESet-Cookie:%20UserID=JohnDoe;%20Max-Age=3600;%20Version=1%3C/code%3E"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/HTTP_Strict_Transport_Security%22%20title=%22HTTP%20Strict%20Transport%20Security%22%3EStrict-Transport-Security%3C/a%3E",
+    "desc": "A%20HSTS%20Policy%20informing%20the%20HTTP%20client%20how%20long%20to%20cache%20the%20HTTPS%20only%20policy%20and%20whether%20this%20applies%20to%20subdomains.",
+    "exa": "%3Ccode%3EStrict-Transport-Security:%20max-age=16070400;%20includeSubDomains%3C/code%3E"
+  },
+  {
+    "name": "Trailer",
+    "desc": "The%20Trailer%20general%20field%20value%20indicates%20that%20the%20given%20set%20of%20header%20fields%20is%20present%20in%20the%20trailer%20of%20a%20message%20encoded%20with%20%3Ca%20href=%22/wiki/Chunked_transfer_coding%22%20class=%22mw-redirect%22%20title=%22Chunked%20transfer%20coding%22%3Echunked%20transfer%20coding%3C/a%3E.",
+    "exa": "%3Ccode%3ETrailer:%20Max-Forwards%3C/code%3E"
+  },
+  {
+    "name": "Transfer-Encoding",
+    "desc": "The%20form%20of%20encoding%20used%20to%20safely%20transfer%20the%20entity%20to%20the%20user.%20%3Ca%20rel=%22nofollow%22%20class=%22external%20text%22%20href=%22https://www.iana.org/assignments/http-parameters%22%3ECurrently%20defined%20methods%3C/a%3E%20are:%20%3Ca%20href=%22/wiki/Chunked_transfer_encoding%22%20title=%22Chunked%20transfer%20encoding%22%3Echunked%3C/a%3E,%20compress,%20deflate,%20gzip,%20identity.%0A%3Cp%3EMust%20not%20be%20used%20with%20HTTP/2.%3Csup%20id=%22cite_ref-rfc9113_connection_14-7%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3ETransfer-Encoding:%20chunked%3C/code%3E"
+  },
+  {
+    "name": "Tk%0A",
+    "desc": "Tracking%20Status%20header,%20value%20suggested%20to%20be%20sent%20in%20response%20to%20a%20DNT(do-not-track),%20possible%20values:%0A%3Cpre%3E%22!%22%20%E2%80%94%20under%20construction%0A%22?%22%20%E2%80%94%20dynamic%0A%22G%22%20%E2%80%94%20gateway%20to%20multiple%20parties%0A%22N%22%20%E2%80%94%20not%20tracking%0A%22T%22%20%E2%80%94%20tracking%0A%22C%22%20%E2%80%94%20tracking%20with%20consent%0A%22P%22%20%E2%80%94%20tracking%20only%20if%20consented%0A%22D%22%20%E2%80%94%20disregarding%20DNT%0A%22U%22%20%E2%80%94%20updated%0A%3C/pre%3E%0A",
+    "exa": "%3Ccode%3ETk:&nbsp;?%3C/code%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/Upgrade_header%22%20class=%22mw-redirect%22%20title=%22Upgrade%20header%22%3EUpgrade%3C/a%3E",
+    "desc": "Ask%20the%20client%20to%20upgrade%20to%20another%20protocol.%0A%3Cp%3EMust%20not%20be%20used%20in%20HTTP/2%3Csup%20id=%22cite_ref-rfc9113_connection_14-8%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-rfc9113_connection-14%22%3E%5B14%5D%3C/a%3E%3C/sup%3E%0A%3C/p%3E%0A",
+    "exa": "%3Ccode%3EUpgrade:%20h2c,%20HTTPS/1.3,%20IRC/6.9,%20RTA/x11,%20websocket%3C/code%3E"
+  },
+  {
+    "name": "Vary",
+    "desc": "Tells%20downstream%20proxies%20how%20to%20match%20future%20request%20headers%20to%20decide%20whether%20the%20cached%20response%20can%20be%20used%20rather%20than%20requesting%20a%20fresh%20one%20from%20the%20origin%20server.",
+    "exa": "%0A%3Cul%3E%3Cli%3EExample%201:%20%3Ccode%3EVary:%20*%3C/code%3E%3C/li%3E%0A%3Cli%3EExample%202:%20%3Ccode%3EVary:%20Accept-Language%3C/code%3E%3C/li%3E%3C/ul%3E%0A"
+  },
+  {
+    "name": "Via",
+    "desc": "Informs%20the%20client%20of%20proxies%20through%20which%20the%20response%20was%20sent.",
+    "exa": "%3Ccode%3EVia:%201.0%20fred,%201.1%20example.com%20(Apache/1.1)%3C/code%3E"
+  },
+  {
+    "name": "Warning",
+    "desc": "A%20general%20warning%20about%20possible%20problems%20with%20the%20entity%20body.",
+    "exa": "%3Ccode%3EWarning:%20199%20Miscellaneous%20warning%3C/code%3E"
+  },
+  {
+    "name": "WWW-Authenticate",
+    "desc": "Indicates%20the%20authentication%20scheme%20that%20should%20be%20used%20to%20access%20the%20requested%20entity.",
+    "exa": "%3Ccode%3EWWW-Authenticate:%20Basic%3C/code%3E"
+  },
+  {
+    "name": "X-Frame-Options%3Csup%20id=%22cite_ref-57%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-57%22%3E%5B56%5D%3C/a%3E%3C/sup%3E",
+    "desc": "%3Ca%20href=%22/wiki/Clickjacking%22%20title=%22Clickjacking%22%3EClickjacking%3C/a%3E%20protection:%20%3Ccode%3Edeny%3C/code%3E%20-%20no%20rendering%20within%20a%20frame,%20%3Ccode%3Esameorigin%3C/code%3E%20-%20no%20rendering%20if%20origin%20mismatch,%20%3Ccode%3Eallow-from%3C/code%3E%20-%20allow%20from%20specified%20location,%20%3Ccode%3Eallowall%3C/code%3E%20-%20non-standard,%20allow%20from%20any%20location",
+    "exa": "%3Ccode%3E%20X-Frame-Options:%20deny%3C/code%3E"
+  },
+  {
+    "name": "Content-Security-Policy,%3Cbr%3EX-Content-Security-Policy,%3Cbr%3EX-WebKit-CSP%3Csup%20id=%22cite_ref-59%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-59%22%3E%5B58%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "%3Ca%20href=%22/wiki/Content_Security_Policy%22%20title=%22Content%20Security%20Policy%22%3EContent%20Security%20Policy%3C/a%3E%20definition.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-WebKit-CSP:%20default-src%20'self'%3C/code%3E%0A"
+  },
+  {
+    "name": "Expect-CT%3Csup%20id=%22cite_ref-60%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-60%22%3E%5B59%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "Notify%20to%20prefer%20to%20enforce%20%3Ca%20href=%22/wiki/Certificate_Transparency%22%20title=%22Certificate%20Transparency%22%3ECertificate%20Transparency%3C/a%3E.%0A",
+    "exa": "%3Ccode%3EExpect-CT:%20max-age=604800,%20enforce,%20report-uri=%22%3Ca%20rel=%22nofollow%22%20class=%22external%20free%22%20href=%22https://example.example/report%22%3Ehttps://example.example/report%3C/a%3E%22%3C/code%3E%0A"
+  },
+  {
+    "name": "NEL%3Csup%20id=%22cite_ref-61%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-61%22%3E%5B60%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Used%20to%20configure%20network%20request%20logging.",
+    "exa": "%3Ccode%20class=%22mw-highlight%20mw-highlight-lang-yaml%20mw-content-ltr%22%20id=%22%22%20style=%22%22%20dir=%22ltr%22%3E%3Cspan%20class=%22nt%22%3ENEL%3C/span%3E%3Cspan%20class=%22p%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7B%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22report_to%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22name_of_reporting_group%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22max_age%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22nv%22%3E12345%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22include_subdomains%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22nv%22%3Efalse%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22success_fraction%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22nv%22%3E0.0%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22failure_fraction%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22nv%22%3E1.0%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7D%3C/span%3E%3C/code%3E%0A"
+  },
+  {
+    "name": "Permissions-Policy%3Csup%20id=%22cite_ref-62%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-62%22%3E%5B61%5D%3C/a%3E%3C/sup%3E",
+    "desc": "To%20allow%20or%20disable%20different%20features%20or%20APIs%20of%20the%20browser.",
+    "exa": "%3Ccode%3EPermissions-Policy:%20fullscreen=(),%20camera=(),%20microphone=(),%20geolocation=(),%20interest-cohort=()%3Csup%20id=%22cite_ref-63%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-63%22%3E%5B62%5D%3C/a%3E%3C/sup%3E%3C/code%3E%0A"
+  },
+  {
+    "name": "%3Ca%20href=%22/wiki/HTTP_refresh%22%20class=%22mw-redirect%22%20title=%22HTTP%20refresh%22%3ERefresh%3C/a%3E",
+    "desc": "Used%20in%20redirection,%20or%20when%20a%20new%20resource%20has%20been%20created.%20%20This%20refresh%20redirects%20after%205%20seconds.%20Header%20extension%20introduced%20by%20Netscape%20and%20supported%20by%20most%20web%20browsers.%20Defined%20by%20HTML%20Standard%3Csup%20id=%22cite_ref-64%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-64%22%3E%5B63%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%3ERefresh:%205;%20url=%3Cspan%20class=%22plainlinks%22%3E%3Ca%20rel=%22nofollow%22%20class=%22external%20free%22%20href=%22http://www.w3.org/pub/WWW/People.html%22%3Ehttp://www.w3.org/pub/WWW/People.html%3C/a%3E%3C/span%3E%3C/code%3E%0A"
+  },
+  {
+    "name": "Report-To%3Csup%20id=%22cite_ref-65%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-65%22%3E%5B64%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Instructs%20the%20user%20agent%20to%20store%20reporting%20endpoints%20for%20an%20origin.",
+    "exa": "%3Ccode%20class=%22mw-highlight%20mw-highlight-lang-yaml%20mw-content-ltr%22%20id=%22%22%20style=%22%22%20dir=%22ltr%22%3E%3Cspan%20class=%22nt%22%3EReport-To%3C/span%3E%3Cspan%20class=%22p%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7B%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22group%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22csp-endpoint%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22max_age%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22nv%22%3E10886400%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E,%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22endpoints%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%5B%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7B%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22url%22%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E:%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22s%22%3E%22https-url-of-site-which-collects-reports%22%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7D%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%5D%3C/span%3E%3Cspan%20class=%22w%22%3E%20%3C/span%3E%3Cspan%20class=%22p%20p-Indicator%22%3E%7D%3C/span%3E%3C/code%3E%0A"
+  },
+  {
+    "name": "Status",
+    "desc": "%3Ca%20href=%22/wiki/Common_Gateway_Interface%22%20title=%22Common%20Gateway%20Interface%22%3ECGI%3C/a%3E%20header%20field%20specifying%20the%20%3Ca%20href=%22/wiki/HTTP_status%22%20class=%22mw-redirect%22%20title=%22HTTP%20status%22%3Estatus%3C/a%3E%20of%20the%20HTTP%20response.%20Normal%20HTTP%20responses%20use%20a%20separate%20%22Status-Line%22%20instead,%20defined%20by%20RFC%209110.%3Csup%20id=%22cite_ref-66%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-66%22%3E%5B65%5D%3C/a%3E%3C/sup%3E%0A",
+    "exa": "%3Ccode%3EStatus:%20200%20OK%20%3C/code%3E%0A"
+  },
+  {
+    "name": "Timing-Allow-Origin%0A",
+    "desc": "The%20%3Ccode%3ETiming-Allow-Origin%3C/code%3E%20response%20header%20specifies%20origins%20that%20are%20allowed%20to%20see%20values%20of%20attributes%20retrieved%20via%20features%20of%20the%20%3Ca%20rel=%22nofollow%22%20class=%22external%20text%22%20href=%22https://developer.mozilla.org/en-US/docs/Web/API/Resource_Timing_API%22%3EResource%20Timing%20API%3C/a%3E,%20which%20would%20otherwise%20be%20reported%20as%20zero%20due%20to%20cross-origin%20restrictions.%3Csup%20id=%22cite_ref-67%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-67%22%3E%5B66%5D%3C/a%3E%3C/sup%3E%0A",
+    "exa": "%3Ccode%3ETiming-Allow-Origin:%20*%3C/code%3E%0A%3Cp%3E%3Ccode%3ETiming-Allow-Origin:%20&lt;origin&gt;%5B,%20&lt;origin&gt;%5D*%3C/code%3E%0A%3C/p%3E%0A"
+  },
+  {
+    "name": "X-Content-Duration%3Csup%20id=%22cite_ref-68%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-68%22%3E%5B67%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Provide%20the%20duration%20of%20the%20audio%20or%20video%20in%20seconds;%20only%20supported%20by%20Gecko%20browsers",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Content-Duration:%2042.666%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Content-Type-Options%3Csup%20id=%22cite_ref-69%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-69%22%3E%5B68%5D%3C/a%3E%3C/sup%3E",
+    "desc": "The%20only%20defined%20value,%20%22nosniff%22,%20prevents%20%3Ca%20href=%22/wiki/Internet_Explorer%22%20title=%22Internet%20Explorer%22%3EInternet%20Explorer%3C/a%3E%20from%20MIME-sniffing%20a%20response%20away%20from%20the%20declared%20content-type.%20This%20also%20applies%20to%20%3Ca%20href=%22/wiki/Google_Chrome%22%20title=%22Google%20Chrome%22%3EGoogle%20Chrome%3C/a%3E,%20when%20downloading%20extensions.%3Csup%20id=%22cite_ref-70%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-70%22%3E%5B69%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Content-Type-Options:%20nosniff%3C/code%3E%3Csup%20id=%22cite_ref-whatwg-fetch-xcto_71-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-whatwg-fetch-xcto-71%22%3E%5B70%5D%3C/a%3E%3C/sup%3E%0A"
+  },
+  {
+    "name": "X-Powered-By%3Csup%20id=%22cite_ref-stackoverflow1_72-0%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-stackoverflow1-72%22%3E%5Bstackoverflow1%201%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Specifies%20the%20technology%20(e.g.%20ASP.NET,%20PHP,%20JBoss)%20supporting%20the%20web%20application%20(version%20details%20are%20often%20in%20%3Ccode%20class=%22nowrap%22%3EX-Runtime%3C/code%3E,%20%3Ccode%20class=%22nowrap%22%3EX-Version%3C/code%3E,%20or%20%3Ccode%20class=%22nowrap%22%3EX-AspNet-Version%3C/code%3E)",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Powered-By:%20PHP/5.4.0%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Redirect-By%3Csup%20id=%22cite_ref-73%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-73%22%3E%5B71%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "Specifies%20the%20component%20that%20is%20responsible%20for%20a%20particular%20redirect.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Redirect-By:%20WordPress%3C/code%3E%3Cbr%3E%3Ccode%20class=%22nowrap%22%3EX-Redirect-By:%20Polylang%3C/code%3E%0A"
+  },
+  {
+    "name": "X-Request-ID,%20X-Correlation-ID%3Csup%20id=%22cite_ref-stackoverflow2_42-1%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-stackoverflow2-42%22%3E%5Bstackoverflow2%201%5D%3C/a%3E%3C/sup%3E%0A",
+    "desc": "Correlates%20HTTP%20requests%20between%20a%20client%20and%20server.%0A",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-Request-ID:%20f058ebd6-02f7-4d3f-942e-904344e8cde5%3C/code%3E%0A"
+  },
+  {
+    "name": "X-UA-Compatible%3Csup%20id=%22cite_ref-74%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-74%22%3E%5B72%5D%3C/a%3E%3C/sup%3E",
+    "desc": "Recommends%20the%20preferred%20rendering%20engine%20(often%20a%20backward-compatibility%20mode)%20to%20use%20to%20display%20the%20content.%20Also%20used%20to%20activate%20%3Ca%20href=%22/wiki/Chrome_Frame%22%20class=%22mw-redirect%22%20title=%22Chrome%20Frame%22%3EChrome%20Frame%3C/a%3E%20in%20Internet%20Explorer.%20In%20HTML%20Standard,%20only%20the%20%3Ccode%3EIE=edge%3C/code%3E%20value%20is%20defined.%3Csup%20id=%22cite_ref-75%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-75%22%3E%5B73%5D%3C/a%3E%3C/sup%3E",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-UA-Compatible:%20IE=edge%3C/code%3E%3Cbr%3E%3Ccode%20class=%22nowrap%22%3EX-UA-Compatible:%20IE=EmulateIE7%3C/code%3E%3Cbr%3E%3Ccode%20class=%22nowrap%22%3EX-UA-Compatible:%20Chrome=1%3C/code%3E%0A"
+  },
+  {
+    "name": "X-XSS-Protection%3Csup%20id=%22cite_ref-76%22%20class=%22reference%22%3E%3Ca%20href=%22#cite_note-76%22%3E%5B74%5D%3C/a%3E%3C/sup%3E",
+    "desc": "%3Ca%20href=%22/wiki/Cross-site_scripting%22%20title=%22Cross-site%20scripting%22%3ECross-site%20scripting%3C/a%3E%20(XSS)%20filter",
+    "exa": "%3Ccode%20class=%22nowrap%22%3EX-XSS-Protection:%201;%20mode=block%3C/code%3E%0A"
+  }
+]

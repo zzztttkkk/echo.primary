@@ -8,7 +8,7 @@ public class ExtAsyncReader(
 	int tmpCap = 4096,
 	int tmpReadSize = 512,
 	int srcReadSize = 4096
-) {
+) : IAsyncReader {
 	private readonly BytesBuffer tmp = new(tmpCap);
 	private readonly byte[] tmpReadBuf = new byte[tmpReadSize];
 	private readonly byte[] srcReadBuf = new byte[srcReadSize];
@@ -24,52 +24,6 @@ public class ExtAsyncReader(
 		tmp.Stream.Position = 0;
 		tmp.Writer.Write(srcReadBuf.AsSpan()[..rl]);
 		tmp.Stream.Position = 0;
-	}
-
-	public async Task<int> Read(byte[] buf) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
-			return await src.Read(buf);
-		}
-
-		return tmp.Reader.Read(buf);
-	}
-
-	public async Task<int> Read(byte[] buf, int timeoutMills) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
-			return await src.Read(buf, timeoutMills);
-		}
-
-		return tmp.Reader.Read(buf);
-	}
-
-	public async Task ReadExactly(byte[] buf) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
-			await src.ReadExactly(buf);
-			return;
-		}
-
-		var rl = tmp.Reader.Read(buf);
-		if (rl == buf.Length) return;
-	}
-
-	public Task ReadExactly(byte[] buf, int timeoutMills) {
-		throw new NotImplementedException();
-	}
-
-	public Task<byte> ReadByte() {
-		throw new NotImplementedException();
-	}
-
-	public Task<byte> ReadByte(int timeoutMills) {
-		throw new NotImplementedException();
-	}
-
-	public Task<int> ReadAtLeast(byte[] buf, int minimumBytes, bool throwWhenEnd = true) {
-		throw new NotImplementedException();
-	}
-
-	public Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true) {
-		throw new NotImplementedException();
 	}
 
 	public async Task ReadUntil(MemoryStream ms, byte target, int timeoutMills = 0, int maxBytesSize = 0) {
@@ -119,5 +73,89 @@ public class ExtAsyncReader(
 	public async Task<string> ReadLine(MemoryStream dst, int timeoutMills = 0, int maxBytesSize = 0) {
 		await ReadUntil(dst, (byte)'\n', timeoutMills: timeoutMills, maxBytesSize: maxBytesSize);
 		return Encoding.UTF8.GetString(dst.GetBuffer().AsSpan()[..(int)dst.Position]);
+	}
+
+	public Task<int> Read(byte[] buf, int timeoutMills) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return src.Read(buf, timeoutMills);
+		}
+
+		return Task.FromResult(tmp.Reader.Read(buf));
+	}
+
+	public Task<int> Read(Memory<byte> buf, int timeoutMills) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return src.Read(buf, timeoutMills);
+		}
+
+		return Task.FromResult(tmp.Reader.Read(buf.Span));
+	}
+
+	public Task ReadExactly(byte[] buf, int timeoutMills) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return src.ReadExactly(buf, timeoutMills);
+		}
+
+		var rl = tmp.Reader.Read(buf);
+		if (rl == buf.Length) return Task.CompletedTask;
+		return src.ReadExactly(buf.AsMemory()[rl..], timeoutMills);
+	}
+
+	public Task ReadExactly(Memory<byte> buf, int timeoutMills) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return src.ReadExactly(buf, timeoutMills);
+		}
+
+		var rl = tmp.Reader.Read(buf.Span);
+		if (rl == buf.Length) return Task.CompletedTask;
+		return src.ReadExactly(buf[rl..], timeoutMills);
+	}
+
+	public async Task<byte> ReadByte(int timeoutMills) {
+		var b = new byte[1];
+		await ReadExactly(b, timeoutMills);
+		return b[0];
+	}
+
+	public async Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return await src.ReadAtLeast(
+				buf,
+				timeoutMills: timeoutMills,
+				minimumBytes: minimumBytes,
+				throwWhenEnd: throwWhenEnd
+			);
+		}
+
+		var rl = tmp.Reader.Read(buf.Span);
+		if (rl >= minimumBytes) return rl;
+		var nrl = await src.ReadAtLeast(
+			buf[rl..],
+			timeoutMills: timeoutMills,
+			minimumBytes: minimumBytes - rl,
+			throwWhenEnd: throwWhenEnd
+		);
+		return nrl + rl;
+	}
+
+	public async Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true) {
+		if (tmp.Stream.Position >= tmp.Stream.Length) {
+			return await src.ReadAtLeast(
+				buf,
+				timeoutMills: timeoutMills,
+				minimumBytes: minimumBytes,
+				throwWhenEnd: throwWhenEnd
+			);
+		}
+
+		var rl = tmp.Reader.Read(buf);
+		if (rl >= minimumBytes) return rl;
+		var nrl = await src.ReadAtLeast(
+			buf.AsMemory()[rl..],
+			timeoutMills: timeoutMills,
+			minimumBytes: minimumBytes - rl,
+			throwWhenEnd: throwWhenEnd
+		);
+		return nrl + rl;
 	}
 }

@@ -1,4 +1,5 @@
-﻿using System.Net.Security;
+﻿using System.Diagnostics;
+using System.Net.Security;
 using System.Net.Sockets;
 using echo.primary.core.io;
 using echo.primary.logging;
@@ -40,6 +41,7 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 			: new SslStream(
 				new NetworkStream(Socket, false), false
 			);
+
 
 		TaskCompletionSource<IAsyncResult> tcs = new();
 		_sslStream.BeginAuthenticateAsServer(
@@ -162,44 +164,22 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 
 	#region IAsyncReader
 
-	public Task<int> Read(byte[] buf) {
-		throw new NotImplementedException();
-	}
+	public partial Task<int> Read(byte[] buf, int timeoutMills);
 
-	public Task<int> Read(Memory<byte> buf) {
-		throw new NotImplementedException();
-	}
+	public partial Task<int> Read(Memory<byte> buf, int timeoutMills);
 
-	public Task<int> Read(byte[] buf, int timeoutMills) {
-		throw new NotImplementedException();
-	}
+	public partial Task ReadExactly(byte[] buf, int timeoutMills);
 
-	public Task<int> Read(Memory<byte> buf, int timeoutMills) {
-		throw new NotImplementedException();
-	}
+	public partial Task ReadExactly(Memory<byte> buf, int timeoutMills);
+	public partial Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes,
+		bool throwWhenEnd = true);
 
-	public Task ReadExactly(Memory<byte> buf) {
-		throw new NotImplementedException();
-	}
+	public partial Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true);
 
-	public Task ReadExactly(Memory<byte> buf, int timeoutMills) {
-		throw new NotImplementedException();
-	}
-
-	public Task<byte> ReadByte() {
-		throw new NotImplementedException();
-	}
-
-	public Task<byte> ReadByte(int timeoutMills) {
-		throw new NotImplementedException();
-	}
-
-	public Task<int> ReadAtLeast(Memory<byte> buf, int minimumBytes, bool throwWhenEnd = true) {
-		throw new NotImplementedException();
-	}
-
-	public Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true) {
-		throw new NotImplementedException();
+	public async Task<byte> ReadByte(int timeoutMills) {
+		var tmp = new byte[1];
+		await ReadExactly(tmp, timeoutMills);
+		return tmp[0];
 	}
 
 	#endregion IAsyncReader

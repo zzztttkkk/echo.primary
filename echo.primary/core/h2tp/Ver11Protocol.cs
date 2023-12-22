@@ -70,6 +70,19 @@ public class Ver11Protocol : ITcpProtocol {
 						break;
 					}
 
+					while (true) {
+						var rtmp = tmp.GetBuffer().AsMemory();
+						if (bodySize < rtmp.Length) {
+							rtmp = rtmp[..(int)bodySize];
+						}
+
+						await reader.ReadExactly(rtmp, 0);
+						bodySize -= rtmp.Length;
+						if (bodySize >= 1) continue;
+
+						readStatus = MessageReadStatus.BODY_OK;
+						break;
+					}
 
 					break;
 				}

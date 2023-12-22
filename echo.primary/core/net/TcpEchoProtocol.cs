@@ -14,7 +14,7 @@ public class TcpEchoProtocol : ITcpProtocol {
 	private async Task Read() {
 		while (Connection.IsAlive) {
 			var buf = new byte[1024];
-			var len = await Connection.Read(buf);
+			var len = await Connection.Read(buf, (int)TimeSpan.FromSeconds(10).TotalMilliseconds);
 			if (len < 1) {
 				break;
 			}
