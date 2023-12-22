@@ -132,6 +132,8 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 		_protocol?.ConnectionLost(exception);
 		server.Disconnect(this);
 
+
+
 		try {
 			_protocol?.Dispose();
 
@@ -171,6 +173,7 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 	public partial Task ReadExactly(byte[] buf, int timeoutMills);
 
 	public partial Task ReadExactly(Memory<byte> buf, int timeoutMills);
+
 	public partial Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes,
 		bool throwWhenEnd = true);
 

@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using echo.primary.core.io;
+﻿using echo.primary.core.io;
 
 namespace echo.primary.core.h2tp;
 
@@ -17,8 +15,8 @@ enum MessageReadStatus {
 
 public class Message {
 	internal readonly string[] flps;
-	internal HttpHeaders? herder = null;
-	internal BytesBuffer? body = null;
+	internal Headers? herder;
+	internal MemoryStream? body = null;
 
 	protected Message() {
 		flps = new string[3];
@@ -35,7 +33,7 @@ public class Request : Message {
 
 	public Uri Uri {
 		get {
-			_uri ??= new Uri(flps[1]);
+			_uri ??= new Uri(flps[1], UriKind.RelativeOrAbsolute);
 			return _uri;
 		}
 	}
@@ -45,11 +43,10 @@ public class Request : Message {
 		set => flps[2] = value;
 	}
 
-	public HttpRequestHeaders Headers {
+	public Headers Headers {
 		get {
-			// todo simple http headers
-			herder ??= (HttpRequestHeaders)Activator.CreateInstance(typeof(HttpRequestHeaders), nonPublic: true)!;
-			return (HttpRequestHeaders)herder;
+			herder ??= new Headers();
+			return herder;
 		}
 	}
 }

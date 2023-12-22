@@ -4,12 +4,24 @@ using echo.primary.core.net;
 
 namespace echo.primary.core.h2tp;
 
+public class Ver11Config {
+	public int MaxFirstLineBytesSize { get; set; } = 4096;
+	public int MaxHeaderLineBytesSize { get; set; } = 4096;
+	public int MaxHeadersCount { get; set; } = 1024;
+	public int MaxBodyBytesSize { get; set; } = 1024 * 1024;
+	public int ReadTimeout { get; set; } = 10_000;
+}
+
 public class Ver11Protocol : ITcpProtocol {
 	public void Dispose() {
 	}
 
 	public void ConnectionMade(TcpConnection conn) {
-		_ = ReadRequests(conn);
+		_ = ReadRequests(conn).ContinueWith(t => {
+			if (t.Exception != null && conn.IsAlive) {
+				conn.Close(t.Exception);
+			}
+		});
 	}
 
 	private async Task ReadRequests(TcpConnection conn) {
@@ -18,7 +30,6 @@ public class Ver11Protocol : ITcpProtocol {
 
 		var req = new Request();
 		var readStatus = MessageReadStatus.None;
-		long bodySize = 0;
 
 		while (conn.IsAlive) {
 			switch (readStatus) {
@@ -55,13 +66,13 @@ public class Ver11Protocol : ITcpProtocol {
 					break;
 				}
 				case MessageReadStatus.HEADER_OK: {
-					req.Headers.TryGetValues("content-length", out var cls);
+					var cls = req.Headers.GetAll("content-length");
 					if (cls == null) {
 						readStatus = MessageReadStatus.BODY_OK;
 						break;
 					}
 
-					if (!long.TryParse(cls.LastOrDefault(""), out bodySize)) {
+					if (!long.TryParse(cls.LastOrDefault(""), out var bodySize)) {
 						throw new Exception("bad content-length");
 					}
 
@@ -70,16 +81,28 @@ public class Ver11Protocol : ITcpProtocol {
 						break;
 					}
 
+					if (req.body == null) {
+						req.body = new((int)bodySize);
+					}
+					else {
+						req.body.Capacity = (int)bodySize;
+					}
+
+					req.body.Position = 0;
+
 					while (true) {
-						var rtmp = tmp.GetBuffer().AsMemory();
+						var rtmp = tmp.GetBuffer();
 						if (bodySize < rtmp.Length) {
 							rtmp = rtmp[..(int)bodySize];
 						}
 
 						await reader.ReadExactly(rtmp, 0);
+
+						req.body.Write(rtmp);
 						bodySize -= rtmp.Length;
 						if (bodySize >= 1) continue;
 
+						req.body.Position = 0;
 						readStatus = MessageReadStatus.BODY_OK;
 						break;
 					}
@@ -87,9 +110,7 @@ public class Ver11Protocol : ITcpProtocol {
 					break;
 				}
 				case MessageReadStatus.BODY_OK: {
-					Console.WriteLine(
-						$"UserAgent: {req.Headers.UserAgent}; Host: {req.Headers.Host}; BodySize: {bodySize}"
-					);
+					Console.WriteLine($"{req.Method} {req.Uri} : {req.body?.Length ?? 0}");
 					conn.Close();
 					return;
 				}
@@ -98,5 +119,8 @@ public class Ver11Protocol : ITcpProtocol {
 	}
 
 	public void ConnectionLost(Exception? exception) {
+		if (exception != null) {
+			Console.WriteLine($"Connection Lost, {exception}");
+		}
 	}
 }

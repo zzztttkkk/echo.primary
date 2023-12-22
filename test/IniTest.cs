@@ -21,6 +21,6 @@ public class IniTest {
 
 	[Test]
 	public void TestBuffer() {
-		Console.WriteLine(string.Format("{0}", 1221));
+		Console.WriteLine(new Uri("", UriKind.RelativeOrAbsolute));
 	}
 }
