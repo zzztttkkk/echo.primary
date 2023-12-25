@@ -21,8 +21,8 @@ public class IniTest {
 
 	[Test]
 	public void TestBuffer() {
-		var headers = new Headers();
-		headers.Add(RfcHeader.Accept, "*/*");
-		Console.WriteLine($"{headers.GetFirst(RfcHeader.Accept)}");
+		var cts = new CancellationTokenSource();
+		cts.Dispose();
+		cts.Cancel();
 	}
 }

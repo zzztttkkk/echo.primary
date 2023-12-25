@@ -1,12 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net.Security;
+﻿using System.Net.Security;
 using System.Net.Sockets;
 using echo.primary.core.io;
 using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
-public partial class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader {
+public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader, IAsyncWriter {
 	private SslStream? _sslStream;
 	private bool _closed;
 	private ITcpProtocol? _protocol;
@@ -17,15 +16,28 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 
 	public bool IsAlive => !_closed && Socket.Connected;
 
+	public bool IsOverSsl => _sslStream != null;
+
 	private void EnsureAlive() {
 		if (_closed || _stream == null) {
 			throw new Exception("conn is not alive");
 		}
 	}
 
-	public async Task Write(byte[] v) {
+	public Task Write(byte[] v) {
 		EnsureAlive();
-		await _stream!.WriteAsync(v);
+		return _stream!.WriteAsync(v).AsTask();
+	}
+
+	public Task Write(MemoryStream ms) {
+		EnsureAlive();
+		return _stream!.WriteAsync(ms.ToArray()).AsTask();
+	}
+
+	public async Task SendFile(string filename) {
+		EnsureAlive();
+		await _stream!.FlushAsync();
+		await Socket.SendFileAsync(filename);
 	}
 
 	public Task Flush() {
@@ -34,14 +46,11 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 	}
 
 	private async Task SslHandshake(SslOptions opts, ITcpProtocol protocol) {
-		_sslStream = opts.RemoteCertificateValidationCallback != null
-			? new SslStream(
-				new NetworkStream(Socket, false), false, opts.RemoteCertificateValidationCallback
-			)
-			: new SslStream(
-				new NetworkStream(Socket, false), false
-			);
-
+		_sslStream = new SslStream(
+			new NetworkStream(Socket, false),
+			false,
+			opts.RemoteCertificateValidationCallback
+		);
 
 		TaskCompletionSource<IAsyncResult> tcs = new();
 		_sslStream.BeginAuthenticateAsServer(
@@ -54,7 +63,7 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 		);
 
 		if (opts.HandshakeTimeoutMills > 0) {
-			_ = Task.Delay(opts.HandshakeTimeoutMills).ContinueWith(t => {
+			_ = Task.Delay(opts.HandshakeTimeoutMills).ContinueWith(_ => {
 				if (tcs.Task.IsCompleted) return;
 				tcs.SetCanceled();
 			});
@@ -165,10 +174,9 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 
 	#region IAsyncReader
 
-	[SuppressMessage("ReSharper", "MethodSupportsCancellation")]
 	private static CancellationTokenSource AutoCancel(int timeoutMills) {
 		var cts = new CancellationTokenSource();
-		_ = Task.Delay(timeoutMills).ContinueWith(_ => cts.Cancel());
+		cts.CancelAfter(timeoutMills);
 		return cts;
 	}
 
@@ -262,6 +270,7 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 			cts.Dispose();
 		}
 	}
+
 
 	public async Task<int>
 		ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd) {

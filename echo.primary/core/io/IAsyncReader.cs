@@ -3,7 +3,6 @@
 public interface IAsyncReader {
 	Task<int> Read(byte[] buf, int timeoutMills);
 	Task<int> Read(Memory<byte> buf, int timeoutMills);
-
 	Task ReadExactly(byte[] buf, int timeoutMills);
 	Task ReadExactly(Memory<byte> buf, int timeoutMills);
 	Task<byte> ReadByte(int timeoutMills);

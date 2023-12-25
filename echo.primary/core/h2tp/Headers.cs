@@ -88,4 +88,46 @@ public class Headers {
 			Set(RfcHeader.ContentLength, value.ToString()!);
 		}
 	}
+
+	public CompressType? AcceptedCompressType {
+		get {
+			var lst = GetAll(RfcHeader.AcceptEncoding);
+			if (lst == null || lst.Count < 1) {
+				return null;
+			}
+
+			foreach (
+				var name in lst.SelectMany(
+					hv => hv
+						.Split(",")
+						.Select(v => v.Split(";")[0].Trim())
+						.Where(v => !string.IsNullOrEmpty(v))
+						.Select(v => v.ToLower())
+				)
+			) {
+				switch (name) {
+					case "gzip": {
+						return CompressType.GZip;
+					}
+					case "deflate": {
+						return CompressType.Deflate;
+					}
+					case "br": {
+						return CompressType.Brotil;
+					}
+					case "*": {
+						return CompressType.GZip;
+					}
+				}
+			}
+
+			return null;
+		}
+	}
+}
+
+internal enum CompressType {
+	Brotil,
+	Deflate,
+	GZip
 }

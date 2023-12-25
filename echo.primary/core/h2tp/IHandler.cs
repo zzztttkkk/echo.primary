@@ -6,6 +6,12 @@ public interface IHandler {
 	public Task Handle(RequestCtx ctx);
 }
 
+public class HelloWorldHandler : IHandler {
+	public Task Handle(RequestCtx ctx) {
+		throw new NotImplementedException();
+	}
+}
+
 public interface IMiddleware {
 	public delegate Task NextFunc();
 
