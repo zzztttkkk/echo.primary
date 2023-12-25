@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using System.Text;
+using echo.primary.core.h2tp;
 using echo.primary.utils;
 
 namespace test;
@@ -21,6 +21,8 @@ public class IniTest {
 
 	[Test]
 	public void TestBuffer() {
-		Console.WriteLine(new Uri("", UriKind.RelativeOrAbsolute));
+		var headers = new Headers();
+		headers.Add(RfcHeader.Accept, "*/*");
+		Console.WriteLine($"{headers.GetFirst(RfcHeader.Accept)}");
 	}
 }

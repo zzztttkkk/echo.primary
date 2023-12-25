@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Net.Security;
 using System.Net.Sockets;
 using echo.primary.core.io;
@@ -133,7 +133,6 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 		server.Disconnect(this);
 
 
-
 		try {
 			_protocol?.Dispose();
 
@@ -166,18 +165,127 @@ public partial class TcpConnection(TcpServer server, Socket socket) : IDisposabl
 
 	#region IAsyncReader
 
-	public partial Task<int> Read(byte[] buf, int timeoutMills);
+	[SuppressMessage("ReSharper", "MethodSupportsCancellation")]
+	private static CancellationTokenSource AutoCancel(int timeoutMills) {
+		var cts = new CancellationTokenSource();
+		_ = Task.Delay(timeoutMills).ContinueWith(_ => cts.Cancel());
+		return cts;
+	}
 
-	public partial Task<int> Read(Memory<byte> buf, int timeoutMills);
+	public async Task<int> Read(byte[] buf, int timeoutMills) {
+		EnsureAlive();
 
-	public partial Task ReadExactly(byte[] buf, int timeoutMills);
+		if (timeoutMills < 1) {
+			return await _stream!.ReadAsync(buf);
+		}
 
-	public partial Task ReadExactly(Memory<byte> buf, int timeoutMills);
+		var cts = AutoCancel(timeoutMills);
+		try {
+			return await _stream!.ReadAsync(buf, cts.Token);
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
 
-	public partial Task<int> ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes,
-		bool throwWhenEnd = true);
+	public async Task<int> Read(Memory<byte> buf, int timeoutMills) {
+		EnsureAlive();
 
-	public partial Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd = true);
+		if (timeoutMills < 1) {
+			return await _stream!.ReadAsync(buf);
+		}
+
+		var cts = AutoCancel(timeoutMills);
+		try {
+			return await _stream!.ReadAsync(buf, cts.Token);
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
+
+	public async Task ReadExactly(byte[] buf, int timeoutMills) {
+		EnsureAlive();
+
+		if (timeoutMills < 1) {
+			await _stream!.ReadExactlyAsync(buf);
+			return;
+		}
+
+		EnsureAlive();
+
+		var cts = AutoCancel(timeoutMills);
+		try {
+			await _stream!.ReadExactlyAsync(buf, cts.Token);
+			return;
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
+
+	public async Task ReadExactly(Memory<byte> buf, int timeoutMills) {
+		EnsureAlive();
+
+		if (timeoutMills < 1) {
+			await _stream!.ReadExactlyAsync(buf);
+			return;
+		}
+
+		EnsureAlive();
+
+		var cts = AutoCancel(timeoutMills);
+		try {
+			await _stream!.ReadExactlyAsync(buf, cts.Token);
+			return;
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
+
+	public async Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd) {
+		EnsureAlive();
+
+		if (timeoutMills < 1) {
+			return await _stream!.ReadAtLeastAsync(buf, minimumBytes: minimumBytes, throwOnEndOfStream: throwWhenEnd);
+		}
+
+		EnsureAlive();
+
+		var cts = AutoCancel(timeoutMills);
+		try {
+			return await _stream!.ReadAtLeastAsync(buf, minimumBytes: minimumBytes, throwOnEndOfStream: throwWhenEnd,
+				cancellationToken: cts.Token);
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
+
+	public async Task<int>
+		ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd) {
+		EnsureAlive();
+
+		if (timeoutMills < 1) {
+			return await _stream!.ReadAtLeastAsync(buf, minimumBytes: minimumBytes, throwOnEndOfStream: throwWhenEnd);
+		}
+
+		EnsureAlive();
+
+		var cts = AutoCancel(timeoutMills);
+		try {
+			return await _stream!.ReadAtLeastAsync(
+				buf,
+				minimumBytes: minimumBytes,
+				throwOnEndOfStream: throwWhenEnd,
+				cancellationToken: cts.Token
+			);
+		}
+		finally {
+			cts.Dispose();
+		}
+	}
 
 	public async Task<byte> ReadByte(int timeoutMills) {
 		var tmp = new byte[1];

@@ -85,10 +85,9 @@ public class Ver11Protocol : ITcpProtocol {
 						req.body = new((int)bodySize);
 					}
 					else {
+						req.body.SetLength(0);
 						req.body.Capacity = (int)bodySize;
 					}
-
-					req.body.Position = 0;
 
 					while (true) {
 						var rtmp = tmp.GetBuffer();
