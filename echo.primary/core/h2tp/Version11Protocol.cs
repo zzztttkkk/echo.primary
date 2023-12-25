@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using System.Net.Sockets;
 using System.Text;
 using echo.primary.core.io;
 using echo.primary.core.net;
@@ -66,7 +66,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: remainMills(begin)
 					);
-					req.flps[0] = Encoding.UTF8.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
+					req.flps[0] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
 					flBytesSize += tmp.Position;
 					readStatus = MessageReadStatus.FL1_OK;
 					break;
@@ -77,7 +77,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: remainMills(begin)
 					);
-					req.flps[1] = Encoding.UTF8.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
+					req.flps[1] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
 					if (string.IsNullOrEmpty(req.flps[1])) {
 						req.flps[1] = "/";
 					}
@@ -96,7 +96,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: remainMills(begin)
 					);
-					req.flps[2] = Encoding.UTF8.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
+					req.flps[2] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
 					flBytesSize += tmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
 						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
@@ -112,7 +112,8 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 							await reader.ReadLine(
 								tmp,
 								maxBytesSize: options.MaxHeaderLineBytesSize,
-								timeoutMills: remainMills(begin)
+								timeoutMills: remainMills(begin),
+								encoding: Encoding.Latin1
 							)
 						).Trim();
 						if (line.Length < 1) {
@@ -202,7 +203,10 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 				cts.CancelAfter(options.HandleTimeout);
 			}
 
+			ctx.Response.EnsureWriteStream(0, ctx.Request.Headers.AcceptedCompressType);
 			await handler.Handle(ctx);
+			await ctx.SendResponse(_connection!);
+			// todo keep-alive
 			ctx.Reset();
 		}
 		catch (Exception e) {
@@ -214,8 +218,14 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 	}
 
 	public void ConnectionLost(Exception? exception) {
-		if (exception != null) {
-			Console.WriteLine($"Connection Lost, {exception}");
+		if (exception == null) return;
+
+		var et = exception.GetType();
+		if (et == typeof(SocketException) || et == typeof(IOException)) {
+			Console.WriteLine($"Connection Lost, {exception.Message}");
+			return;
 		}
+
+		Console.WriteLine($"Connection Lost, {exception}");
 	}
 }

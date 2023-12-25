@@ -36,7 +36,6 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 
 	public async Task SendFile(string filename) {
 		EnsureAlive();
-		await _stream!.FlushAsync();
 		await Socket.SendFileAsync(filename);
 	}
 

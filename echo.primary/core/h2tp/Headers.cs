@@ -126,7 +126,7 @@ public class Headers {
 	}
 }
 
-internal enum CompressType {
+public enum CompressType {
 	Brotil,
 	Deflate,
 	GZip

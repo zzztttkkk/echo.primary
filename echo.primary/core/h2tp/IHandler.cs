@@ -8,7 +8,8 @@ public interface IHandler {
 
 public class HelloWorldHandler : IHandler {
 	public Task Handle(RequestCtx ctx) {
-		throw new NotImplementedException();
+		ctx.Response.Write("Hello World\r\n");
+		return Task.CompletedTask;
 	}
 }
 

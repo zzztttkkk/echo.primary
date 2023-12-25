@@ -1738,450 +1738,118 @@ X-XSS-Protection: 1; mode=block
 
 internal static class HeaderToString {
 	internal static string ToString(RfcHeader ev) {
-		switch (ev) {
-			case RfcHeader.AIM: {
-				return "a-im";
-			}
-
-			case RfcHeader.Accept: {
-				return "accept";
-			}
-
-			case RfcHeader.AcceptCharset: {
-				return "accept-charset";
-			}
-
-			case RfcHeader.AcceptDatetime: {
-				return "accept-datetime";
-			}
-
-			case RfcHeader.AcceptEncoding: {
-				return "accept-encoding";
-			}
-
-			case RfcHeader.AcceptLanguage: {
-				return "accept-language";
-			}
-
-			case RfcHeader.AccessControlRequestMethod: {
-				return "access-control-request-method";
-			}
-
-			case RfcHeader.AccessControlRequestHeaders: {
-				return "access-control-request-headers";
-			}
-
-			case RfcHeader.Authorization: {
-				return "authorization";
-			}
-
-			case RfcHeader.CacheControl: {
-				return "cache-control";
-			}
-
-			case RfcHeader.Connection: {
-				return "connection";
-			}
-
-			case RfcHeader.ContentEncoding: {
-				return "content-encoding";
-			}
-
-			case RfcHeader.ContentLength: {
-				return "content-length";
-			}
-
-			case RfcHeader.ContentMD5: {
-				return "content-md5";
-			}
-
-			case RfcHeader.ContentType: {
-				return "content-type";
-			}
-
-			case RfcHeader.Cookie: {
-				return "cookie";
-			}
-
-			case RfcHeader.Date: {
-				return "date";
-			}
-
-			case RfcHeader.Expect: {
-				return "expect";
-			}
-
-			case RfcHeader.Forwarded: {
-				return "forwarded";
-			}
-
-			case RfcHeader.From: {
-				return "from";
-			}
-
-			case RfcHeader.Host: {
-				return "host";
-			}
-
-			case RfcHeader.HTTP2Settings: {
-				return "http2-settings";
-			}
-
-			case RfcHeader.IfMatch: {
-				return "if-match";
-			}
-
-			case RfcHeader.IfModifiedSince: {
-				return "if-modified-since";
-			}
-
-			case RfcHeader.IfNoneMatch: {
-				return "if-none-match";
-			}
-
-			case RfcHeader.IfRange: {
-				return "if-range";
-			}
-
-			case RfcHeader.IfUnmodifiedSince: {
-				return "if-unmodified-since";
-			}
-
-			case RfcHeader.MaxForwards: {
-				return "max-forwards";
-			}
-
-			case RfcHeader.Origin: {
-				return "origin";
-			}
-
-			case RfcHeader.Pragma: {
-				return "pragma";
-			}
-
-			case RfcHeader.Prefer: {
-				return "prefer";
-			}
-
-			case RfcHeader.ProxyAuthorization: {
-				return "proxy-authorization";
-			}
-
-			case RfcHeader.Range: {
-				return "range";
-			}
-
-			case RfcHeader.Referer: {
-				return "referer";
-			}
-
-			case RfcHeader.TE: {
-				return "te";
-			}
-
-			case RfcHeader.Trailer: {
-				return "trailer";
-			}
-
-			case RfcHeader.TransferEncoding: {
-				return "transfer-encoding";
-			}
-
-			case RfcHeader.UserAgent: {
-				return "user-agent";
-			}
-
-			case RfcHeader.Upgrade: {
-				return "upgrade";
-			}
-
-			case RfcHeader.Via: {
-				return "via";
-			}
-
-			case RfcHeader.Warning: {
-				return "warning";
-			}
-
-			case RfcHeader.UpgradeInsecureRequests: {
-				return "upgrade-insecure-requests";
-			}
-
-			case RfcHeader.XRequestedWith: {
-				return "x-requested-with";
-			}
-
-			case RfcHeader.DNT: {
-				return "dnt";
-			}
-
-			case RfcHeader.XForwardedFor: {
-				return "x-forwarded-for";
-			}
-
-			case RfcHeader.XForwardedHost: {
-				return "x-forwarded-host";
-			}
-
-			case RfcHeader.XForwardedProto: {
-				return "x-forwarded-proto";
-			}
-
-			case RfcHeader.FrontEndHttps: {
-				return "front-end-https";
-			}
-
-			case RfcHeader.XHttpMethodOverride: {
-				return "x-http-method-override";
-			}
-
-			case RfcHeader.XATTDeviceId: {
-				return "x-att-deviceid";
-			}
-
-			case RfcHeader.XWapProfile: {
-				return "x-wap-profile";
-			}
-
-			case RfcHeader.ProxyConnection: {
-				return "proxy-connection";
-			}
-
-			case RfcHeader.XUIDH: {
-				return "x-uidh";
-			}
-
-			case RfcHeader.XCsrfToken: {
-				return "x-csrf-token";
-			}
-
-			case RfcHeader.XRequestID: {
-				return "x-request-id";
-			}
-
-			case RfcHeader.XCorrelationID: {
-				return "x-correlation-id";
-			}
-
-			case RfcHeader.CorrelationID: {
-				return "correlation-id";
-			}
-
-			case RfcHeader.SaveData: {
-				return "save-data";
-			}
-
-			case RfcHeader.SecGPC: {
-				return "sec-gpc";
-			}
-
-			case RfcHeader.AcceptCH: {
-				return "accept-ch";
-			}
-
-			case RfcHeader.AccessControlAllowOrigin: {
-				return "access-control-allow-origin";
-			}
-
-			case RfcHeader.AccessControlAllowCredentials: {
-				return "access-control-allow-credentials";
-			}
-
-			case RfcHeader.AccessControlExposeHeaders: {
-				return "access-control-expose-headers";
-			}
-
-			case RfcHeader.AccessControlMaxAge: {
-				return "access-control-max-age";
-			}
-
-			case RfcHeader.AccessControlAllowMethods: {
-				return "access-control-allow-methods";
-			}
-
-			case RfcHeader.AccessControlAllowHeaders: {
-				return "access-control-allow-headers";
-			}
-
-			case RfcHeader.AcceptPatch: {
-				return "accept-patch";
-			}
-
-			case RfcHeader.AcceptRanges: {
-				return "accept-ranges";
-			}
-
-			case RfcHeader.Age: {
-				return "age";
-			}
-
-			case RfcHeader.Allow: {
-				return "allow";
-			}
-
-			case RfcHeader.AltSvc: {
-				return "alt-svc";
-			}
-
-			case RfcHeader.ContentDisposition: {
-				return "content-disposition";
-			}
-
-			case RfcHeader.ContentLanguage: {
-				return "content-language";
-			}
-
-			case RfcHeader.ContentLocation: {
-				return "content-location";
-			}
-
-			case RfcHeader.ContentRange: {
-				return "content-range";
-			}
-
-			case RfcHeader.DeltaBase: {
-				return "delta-base";
-			}
-
-			case RfcHeader.ETag: {
-				return "etag";
-			}
-
-			case RfcHeader.Expires: {
-				return "expires";
-			}
-
-			case RfcHeader.IM: {
-				return "im";
-			}
-
-			case RfcHeader.LastModified: {
-				return "last-modified";
-			}
-
-			case RfcHeader.Link: {
-				return "link";
-			}
-
-			case RfcHeader.Location: {
-				return "location";
-			}
-
-			case RfcHeader.P3P: {
-				return "p3p";
-			}
-
-			case RfcHeader.PreferenceApplied: {
-				return "preference-applied";
-			}
-
-			case RfcHeader.ProxyAuthenticate: {
-				return "proxy-authenticate";
-			}
-
-			case RfcHeader.PublicKeyPins: {
-				return "public-key-pins";
-			}
-
-			case RfcHeader.RetryAfter: {
-				return "retry-after";
-			}
-
-			case RfcHeader.Server: {
-				return "server";
-			}
-
-			case RfcHeader.SetCookie: {
-				return "set-cookie";
-			}
-
-			case RfcHeader.StrictTransportSecurity: {
-				return "strict-transport-security";
-			}
-
-			case RfcHeader.Tk: {
-				return "tk";
-			}
-
-			case RfcHeader.Vary: {
-				return "vary";
-			}
-
-			case RfcHeader.WWWAuthenticate: {
-				return "www-authenticate";
-			}
-
-			case RfcHeader.XFrameOptions: {
-				return "x-frame-options";
-			}
-
-			case RfcHeader.ContentSecurityPolicy: {
-				return "content-security-policy";
-			}
-
-			case RfcHeader.XContentSecurityPolicy: {
-				return "x-content-security-policy";
-			}
-
-			case RfcHeader.XWebKitCSP: {
-				return "x-webkit-csp";
-			}
-
-			case RfcHeader.ExpectCT: {
-				return "expect-ct";
-			}
-
-			case RfcHeader.NEL: {
-				return "nel";
-			}
-
-			case RfcHeader.PermissionsPolicy: {
-				return "permissions-policy";
-			}
-
-			case RfcHeader.Refresh: {
-				return "refresh";
-			}
-
-			case RfcHeader.ReportTo: {
-				return "report-to";
-			}
-
-			case RfcHeader.Status: {
-				return "status";
-			}
-
-			case RfcHeader.TimingAllowOrigin: {
-				return "timing-allow-origin";
-			}
-
-			case RfcHeader.XContentDuration: {
-				return "x-content-duration";
-			}
-
-			case RfcHeader.XContentTypeOptions: {
-				return "x-content-type-options";
-			}
-
-			case RfcHeader.XPoweredBy: {
-				return "x-powered-by";
-			}
-
-			case RfcHeader.XRedirectBy: {
-				return "x-redirect-by";
-			}
-
-			case RfcHeader.XUACompatible: {
-				return "x-ua-compatible";
-			}
-
-			case RfcHeader.XXSSProtection: {
-				return "x-xss-protection";
-			}
-
-			default: {
-				throw new UnreachableException();
-			}
-		}
+		return ev switch {
+			RfcHeader.AIM => "a-im",
+			RfcHeader.Accept => "accept",
+			RfcHeader.AcceptCharset => "accept-charset",
+			RfcHeader.AcceptDatetime => "accept-datetime",
+			RfcHeader.AcceptEncoding => "accept-encoding",
+			RfcHeader.AcceptLanguage => "accept-language",
+			RfcHeader.AccessControlRequestMethod => "access-control-request-method",
+			RfcHeader.AccessControlRequestHeaders => "access-control-request-headers",
+			RfcHeader.Authorization => "authorization",
+			RfcHeader.CacheControl => "cache-control",
+			RfcHeader.Connection => "connection",
+			RfcHeader.ContentEncoding => "content-encoding",
+			RfcHeader.ContentLength => "content-length",
+			RfcHeader.ContentMD5 => "content-md5",
+			RfcHeader.ContentType => "content-type",
+			RfcHeader.Cookie => "cookie",
+			RfcHeader.Date => "date",
+			RfcHeader.Expect => "expect",
+			RfcHeader.Forwarded => "forwarded",
+			RfcHeader.From => "from",
+			RfcHeader.Host => "host",
+			RfcHeader.HTTP2Settings => "http2-settings",
+			RfcHeader.IfMatch => "if-match",
+			RfcHeader.IfModifiedSince => "if-modified-since",
+			RfcHeader.IfNoneMatch => "if-none-match",
+			RfcHeader.IfRange => "if-range",
+			RfcHeader.IfUnmodifiedSince => "if-unmodified-since",
+			RfcHeader.MaxForwards => "max-forwards",
+			RfcHeader.Origin => "origin",
+			RfcHeader.Pragma => "pragma",
+			RfcHeader.Prefer => "prefer",
+			RfcHeader.ProxyAuthorization => "proxy-authorization",
+			RfcHeader.Range => "range",
+			RfcHeader.Referer => "referer",
+			RfcHeader.TE => "te",
+			RfcHeader.Trailer => "trailer",
+			RfcHeader.TransferEncoding => "transfer-encoding",
+			RfcHeader.UserAgent => "user-agent",
+			RfcHeader.Upgrade => "upgrade",
+			RfcHeader.Via => "via",
+			RfcHeader.Warning => "warning",
+			RfcHeader.UpgradeInsecureRequests => "upgrade-insecure-requests",
+			RfcHeader.XRequestedWith => "x-requested-with",
+			RfcHeader.DNT => "dnt",
+			RfcHeader.XForwardedFor => "x-forwarded-for",
+			RfcHeader.XForwardedHost => "x-forwarded-host",
+			RfcHeader.XForwardedProto => "x-forwarded-proto",
+			RfcHeader.FrontEndHttps => "front-end-https",
+			RfcHeader.XHttpMethodOverride => "x-http-method-override",
+			RfcHeader.XATTDeviceId => "x-att-deviceid",
+			RfcHeader.XWapProfile => "x-wap-profile",
+			RfcHeader.ProxyConnection => "proxy-connection",
+			RfcHeader.XUIDH => "x-uidh",
+			RfcHeader.XCsrfToken => "x-csrf-token",
+			RfcHeader.XRequestID => "x-request-id",
+			RfcHeader.XCorrelationID => "x-correlation-id",
+			RfcHeader.CorrelationID => "correlation-id",
+			RfcHeader.SaveData => "save-data",
+			RfcHeader.SecGPC => "sec-gpc",
+			RfcHeader.AcceptCH => "accept-ch",
+			RfcHeader.AccessControlAllowOrigin => "access-control-allow-origin",
+			RfcHeader.AccessControlAllowCredentials => "access-control-allow-credentials",
+			RfcHeader.AccessControlExposeHeaders => "access-control-expose-headers",
+			RfcHeader.AccessControlMaxAge => "access-control-max-age",
+			RfcHeader.AccessControlAllowMethods => "access-control-allow-methods",
+			RfcHeader.AccessControlAllowHeaders => "access-control-allow-headers",
+			RfcHeader.AcceptPatch => "accept-patch",
+			RfcHeader.AcceptRanges => "accept-ranges",
+			RfcHeader.Age => "age",
+			RfcHeader.Allow => "allow",
+			RfcHeader.AltSvc => "alt-svc",
+			RfcHeader.ContentDisposition => "content-disposition",
+			RfcHeader.ContentLanguage => "content-language",
+			RfcHeader.ContentLocation => "content-location",
+			RfcHeader.ContentRange => "content-range",
+			RfcHeader.DeltaBase => "delta-base",
+			RfcHeader.ETag => "etag",
+			RfcHeader.Expires => "expires",
+			RfcHeader.IM => "im",
+			RfcHeader.LastModified => "last-modified",
+			RfcHeader.Link => "link",
+			RfcHeader.Location => "location",
+			RfcHeader.P3P => "p3p",
+			RfcHeader.PreferenceApplied => "preference-applied",
+			RfcHeader.ProxyAuthenticate => "proxy-authenticate",
+			RfcHeader.PublicKeyPins => "public-key-pins",
+			RfcHeader.RetryAfter => "retry-after",
+			RfcHeader.Server => "server",
+			RfcHeader.SetCookie => "set-cookie",
+			RfcHeader.StrictTransportSecurity => "strict-transport-security",
+			RfcHeader.Tk => "tk",
+			RfcHeader.Vary => "vary",
+			RfcHeader.WWWAuthenticate => "www-authenticate",
+			RfcHeader.XFrameOptions => "x-frame-options",
+			RfcHeader.ContentSecurityPolicy => "content-security-policy",
+			RfcHeader.XContentSecurityPolicy => "x-content-security-policy",
+			RfcHeader.XWebKitCSP => "x-webkit-csp",
+			RfcHeader.ExpectCT => "expect-ct",
+			RfcHeader.NEL => "nel",
+			RfcHeader.PermissionsPolicy => "permissions-policy",
+			RfcHeader.Refresh => "refresh",
+			RfcHeader.ReportTo => "report-to",
+			RfcHeader.Status => "status",
+			RfcHeader.TimingAllowOrigin => "timing-allow-origin",
+			RfcHeader.XContentDuration => "x-content-duration",
+			RfcHeader.XContentTypeOptions => "x-content-type-options",
+			RfcHeader.XPoweredBy => "x-powered-by",
+			RfcHeader.XRedirectBy => "x-redirect-by",
+			RfcHeader.XUACompatible => "x-ua-compatible",
+			RfcHeader.XXSSProtection => "x-xss-protection",
+			_ => throw new UnreachableException()
+		};
 	}
 }

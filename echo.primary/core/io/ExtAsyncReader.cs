@@ -66,13 +66,18 @@ public class ExtAsyncReader(
 		}
 	}
 
-	public Task<string> ReadLine(int capHit, int timeoutMills = 0, int maxBytesSize = 0) {
-		return ReadLine(new MemoryStream(capHit), timeoutMills, maxBytesSize);
+	public Task<string> ReadLine(int capHit, int timeoutMills = 0, int maxBytesSize = 0, Encoding? encoding = null) {
+		return ReadLine(new MemoryStream(capHit), timeoutMills, maxBytesSize, encoding);
 	}
 
-	public async Task<string> ReadLine(MemoryStream dst, int timeoutMills = 0, int maxBytesSize = 0) {
+	public async Task<string> ReadLine(
+		MemoryStream dst,
+		int timeoutMills = 0,
+		int maxBytesSize = 0,
+		Encoding? encoding = null
+	) {
 		await ReadUntil(dst, (byte)'\n', timeoutMills: timeoutMills, maxBytesSize: maxBytesSize);
-		return Encoding.UTF8.GetString(dst.GetBuffer().AsSpan()[..(int)dst.Position]);
+		return (encoding ?? Encoding.UTF8).GetString(dst.GetBuffer().AsSpan()[..(int)dst.Position]);
 	}
 
 	public Task<int> Read(byte[] buf, int timeoutMills) {
