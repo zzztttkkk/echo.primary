@@ -12,8 +12,11 @@ public class Version11Options {
 	public int MaxHeadersCount { get; set; } = 1024;
 	public int MaxBodyBytesSize { get; set; } = 1024 * 1024;
 	public int ReadTimeout { get; set; } = 10_000;
-
 	public int HandleTimeout { get; set; } = 0;
+
+	public bool EnableCompression { get; set; } = true;
+
+	public int MinCompressionSize { get; set; } = 1024;
 }
 
 public class Version11Protocol(IHandler handler, Version11Options options) : ITcpProtocol {
@@ -203,7 +206,10 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 				cts.CancelAfter(options.HandleTimeout);
 			}
 
-			ctx.Response.EnsureWriteStream(0, ctx.Request.Headers.AcceptedCompressType);
+			ctx.Response.EnsureWriteStream(
+				options.MinCompressionSize,
+				options.EnableCompression ? ctx.Request.Headers.AcceptedCompressType : null
+			);
 			await handler.Handle(ctx);
 			await ctx.SendResponse(_connection!);
 			// todo keep-alive
