@@ -69,17 +69,8 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		}
 
 		var result = await tcs.Task;
-
 		if (_closed) return;
-
-		try {
-			_sslStream.EndAuthenticateAsServer(result);
-		}
-		catch (Exception e) {
-			server.Logger.Debug($"SslHandshakeFailed: {Socket.RemoteEndPoint} {e.Message}");
-			Close(e);
-			return;
-		}
+		_sslStream.EndAuthenticateAsServer(result);
 
 		_stream = new BufferedStream(_sslStream, Socket.SendBufferSize);
 		_protocol = protocol;
