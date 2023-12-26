@@ -126,8 +126,9 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 						var idx = line.IndexOf(':');
 						req.Headers.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
-						headersCount++;
-						if (options.MaxHeadersCount > 0 && headersCount > options.MaxHeadersCount) {
+
+						if (options.MaxHeadersCount < 1) continue;
+						if (++headersCount > options.MaxHeadersCount) {
 							throw new Exception($"bad request, reach {nameof(options.MaxHeadersCount)}");
 						}
 					}

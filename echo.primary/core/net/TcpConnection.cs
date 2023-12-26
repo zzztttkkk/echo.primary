@@ -33,6 +33,10 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		EnsureAlive();
 		return _stream!.WriteAsync(ms.ToArray()).AsTask();
 	}
+	public Task Write(ReadOnlyMemory<byte> ms) {
+		EnsureAlive();
+		return _stream!.WriteAsync(ms).AsTask();
+	}
 
 	public async Task SendFile(string filename) {
 		EnsureAlive();

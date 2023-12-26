@@ -21,8 +21,6 @@ public class IniTest {
 
 	[Test]
 	public void TestBuffer() {
-		var cts = new CancellationTokenSource();
-		cts.Dispose();
-		cts.Cancel();
+		Console.WriteLine($"{Mime.GetMimeType("a.pdf")}");
 	}
 }
