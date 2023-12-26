@@ -12,8 +12,11 @@ public class Version11Options {
 	public int MaxHeadersCount { get; set; } = 1024;
 	public int MaxBodyBytesSize { get; set; } = 1024 * 1024;
 	public int ReadTimeout { get; set; } = 10_000;
-
 	public int HandleTimeout { get; set; } = 0;
+
+	public bool EnableCompression { get; set; } = true;
+
+	public int MinCompressionSize { get; set; } = 1024;
 }
 
 public class Version11Protocol(IHandler handler, Version11Options options) : ITcpProtocol {
@@ -122,7 +125,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						}
 
 						var idx = line.IndexOf(':');
-						req.HttpHeaders.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
+						req.Headers.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
 						headersCount++;
 						if (options.MaxHeadersCount > 0 && headersCount > options.MaxHeadersCount) {
 							throw new Exception($"bad request, reach {nameof(options.MaxHeadersCount)}");
@@ -132,11 +135,11 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 					break;
 				}
 				case MessageReadStatus.HEADER_OK: {
-					var host = req.HttpHeaders.GetLast(HttpRfcHeader.Host) ?? "localhost";
+					var host = req.Headers.GetLast(HttpRfcHeader.Host) ?? "localhost";
 					var protocol = conn.IsOverSsl ? "https" : "http";
 					req._uri = new Uri($"{protocol}://{host}{req.flps[1]}");
 
-					var cls = req.HttpHeaders.GetAll("content-length");
+					var cls = req.Headers.GetAll("content-length");
 					if (cls == null) {
 						readStatus = MessageReadStatus.BODY_OK;
 						break;
@@ -203,7 +206,10 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 				cts.CancelAfter(options.HandleTimeout);
 			}
 
-			ctx.Response.EnsureWriteStream(0, ctx.Request.HttpHeaders.AcceptedCompressType);
+			ctx.Response.EnsureWriteStream(
+				options.MinCompressionSize,
+				options.EnableCompression ? ctx.Request.Headers.AcceptedCompressType : null
+			);
 			await handler.Handle(ctx);
 			await ctx.SendResponse(_connection!);
 			// todo keep-alive
