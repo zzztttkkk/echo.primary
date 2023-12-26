@@ -46,7 +46,7 @@ public class ExtAsyncReader(
 				throw new Exception("empty read from tmp");
 			}
 
-			var idx = Array.IndexOf(tmpReadBuf, target, 0, rl);
+			var idx = ((ReadOnlySpan<byte>)tmpReadBuf.AsSpan(0, rl)).IndexOf(target);
 			if (idx < 0) {
 				if (maxBytesSize > 0 && ms.Length + rl > maxBytesSize) {
 					throw new Exception("reach max size");

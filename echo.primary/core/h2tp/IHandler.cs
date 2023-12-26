@@ -8,6 +8,7 @@ public interface IHandler {
 
 public class HelloWorldHandler : IHandler {
 	public Task Handle(RequestCtx ctx) {
+		ctx.Response.Headers.ContentType = "text/plain";
 		ctx.Response.Write("Hello World\r\n");
 		return Task.CompletedTask;
 	}

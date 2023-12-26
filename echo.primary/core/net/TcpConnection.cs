@@ -128,30 +128,79 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		if (_closed) return;
 		_closed = true;
 
-		_protocol?.ConnectionLost(exception);
-		server.Disconnect(this);
 
+		try {
+			_protocol?.ConnectionLost(exception);
+		}
+		catch {
+			// ignored
+		}
+
+		try {
+			server.Disconnect(this);
+		}
+		catch {
+			// ignored
+		}
 
 		try {
 			_protocol?.Dispose();
+		}
+		catch {
+			// ignored
+		}
 
+		try {
 			_stream?.Close();
+		}
+		catch {
+			// ignored
+		}
+
+
+		try {
 			_stream?.Dispose();
+		}
+		catch {
+			// ignored
+		}
 
+
+		try {
 			_sslStream?.Close();
+		}
+		catch {
+			// ignored
+		}
+
+
+		try {
 			_sslStream?.Dispose();
+		}
+		catch {
+			// ignored
+		}
 
-			try {
-				Socket.Shutdown(SocketShutdown.Both);
-			}
-			catch (SocketException) {
-				// ignored
-			}
+		try {
+			Socket.Shutdown(SocketShutdown.Both);
+		}
+		catch {
+			// ignored
+		}
 
+
+		try {
 			Socket.Close();
+		}
+		catch {
+			// ignored
+		}
+
+
+		try {
 			Socket.Dispose();
 		}
-		catch (Exception) {
+		catch {
 			// ignored
 		}
 	}
@@ -215,7 +264,6 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		var cts = AutoCancel(timeoutMills);
 		try {
 			await _stream!.ReadExactlyAsync(buf, cts.Token);
-			return;
 		}
 		finally {
 			cts.Dispose();
@@ -235,7 +283,6 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		var cts = AutoCancel(timeoutMills);
 		try {
 			await _stream!.ReadExactlyAsync(buf, cts.Token);
-			return;
 		}
 		finally {
 			cts.Dispose();
@@ -246,15 +293,23 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		EnsureAlive();
 
 		if (timeoutMills < 1) {
-			return await _stream!.ReadAtLeastAsync(buf, minimumBytes: minimumBytes, throwOnEndOfStream: throwWhenEnd);
+			return await _stream!.ReadAtLeastAsync(
+				buf,
+				minimumBytes: minimumBytes,
+				throwOnEndOfStream: throwWhenEnd
+			);
 		}
 
 		EnsureAlive();
 
 		var cts = AutoCancel(timeoutMills);
 		try {
-			return await _stream!.ReadAtLeastAsync(buf, minimumBytes: minimumBytes, throwOnEndOfStream: throwWhenEnd,
-				cancellationToken: cts.Token);
+			return await _stream!.ReadAtLeastAsync(
+				buf,
+				minimumBytes: minimumBytes,
+				throwOnEndOfStream: throwWhenEnd,
+				cancellationToken: cts.Token
+			);
 		}
 		finally {
 			cts.Dispose();
@@ -262,8 +317,12 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 	}
 
 
-	public async Task<int>
-		ReadAtLeast(Memory<byte> buf, int timeoutMills, int minimumBytes, bool throwWhenEnd) {
+	public async Task<int> ReadAtLeast(
+		Memory<byte> buf,
+		int timeoutMills,
+		int minimumBytes,
+		bool throwWhenEnd
+	) {
 		EnsureAlive();
 
 		if (timeoutMills < 1) {

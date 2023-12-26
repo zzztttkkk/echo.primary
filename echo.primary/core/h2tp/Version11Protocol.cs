@@ -122,7 +122,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						}
 
 						var idx = line.IndexOf(':');
-						req.Headers.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
+						req.HttpHeaders.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
 						headersCount++;
 						if (options.MaxHeadersCount > 0 && headersCount > options.MaxHeadersCount) {
 							throw new Exception($"bad request, reach {nameof(options.MaxHeadersCount)}");
@@ -132,11 +132,11 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 					break;
 				}
 				case MessageReadStatus.HEADER_OK: {
-					var host = req.Headers.GetLast(RfcHeader.Host) ?? "localhost";
+					var host = req.HttpHeaders.GetLast(HttpRfcHeader.Host) ?? "localhost";
 					var protocol = conn.IsOverSsl ? "https" : "http";
 					req._uri = new Uri($"{protocol}://{host}{req.flps[1]}");
 
-					var cls = req.Headers.GetAll("content-length");
+					var cls = req.HttpHeaders.GetAll("content-length");
 					if (cls == null) {
 						readStatus = MessageReadStatus.BODY_OK;
 						break;
@@ -203,7 +203,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 				cts.CancelAfter(options.HandleTimeout);
 			}
 
-			ctx.Response.EnsureWriteStream(0, ctx.Request.Headers.AcceptedCompressType);
+			ctx.Response.EnsureWriteStream(0, ctx.Request.HttpHeaders.AcceptedCompressType);
 			await handler.Handle(ctx);
 			await ctx.SendResponse(_connection!);
 			// todo keep-alive

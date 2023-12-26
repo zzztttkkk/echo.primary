@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using echo.primary.core.io;
 
 namespace echo.primary.core.net;
 
@@ -12,14 +13,11 @@ public class TcpEchoProtocol : ITcpProtocol {
 	}
 
 	private async Task Read() {
+		var reader = new ExtAsyncReader(Connection);
+		var tmp = new MemoryStream();
 		while (Connection.IsAlive) {
-			var buf = new byte[1024];
-			var len = await Connection.Read(buf, (int)TimeSpan.FromSeconds(10).TotalMilliseconds);
-			if (len < 1) {
-				break;
-			}
-
-			await DataReceived(buf, len);
+			await reader.ReadUntil(tmp, (byte)'\n', timeoutMills: 5_000, maxBytesSize: 4096);
+			await DataReceived(tmp.ToArray(), (int)tmp.Position);
 		}
 	}
 
@@ -37,7 +35,9 @@ public class TcpEchoProtocol : ITcpProtocol {
 	}
 
 	public void Dispose() {
+		// ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 		if (Connection == null) return;
 		if (!Connection.IsAlive) return;
+		Connection.Dispose();
 	}
 }

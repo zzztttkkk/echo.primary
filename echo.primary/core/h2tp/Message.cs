@@ -15,7 +15,7 @@ enum MessageReadStatus {
 
 public class Message {
 	internal readonly string[] flps;
-	internal Headers? herders;
+	internal HttpHeaders? herders;
 	internal MemoryStream? body = null;
 
 	protected Message() {
@@ -43,9 +43,9 @@ public class Request : Message {
 		set => flps[2] = value;
 	}
 
-	public Headers Headers {
+	public HttpHeaders HttpHeaders {
 		get {
-			herders ??= new Headers();
+			herders ??= new HttpHeaders();
 			return herders;
 		}
 	}
@@ -69,18 +69,18 @@ public class Response : Message {
 		get => string.IsNullOrEmpty(flps[1]) ? 0 : int.Parse(flps[1]);
 		set {
 			flps[1] = value.ToString();
-			flps[2] = StatusToString.ToString((RfcStatusCode)value);
+			flps[2] = StatusToString.ToString((HttpRfcStatusCode)value);
 		}
 	}
 
 	public string StatusText {
-		get => string.IsNullOrEmpty(flps[2]) ? StatusToString.ToString((RfcStatusCode)StatusCode) : flps[2];
+		get => string.IsNullOrEmpty(flps[2]) ? StatusToString.ToString((HttpRfcStatusCode)StatusCode) : flps[2];
 		set => flps[2] = value;
 	}
 
-	public Headers Headers {
+	public HttpHeaders Headers {
 		get {
-			herders ??= new Headers();
+			herders ??= new HttpHeaders();
 			return herders;
 		}
 	}
@@ -97,15 +97,15 @@ public class Response : Message {
 		switch (compressType) {
 			case CompressType.Brotil:
 				_compressStream = new BrotliStream(body, CompressionLevel.Optimal);
-				Headers.Set(RfcHeader.ContentEncoding, "br");
+				Headers.Set(HttpRfcHeader.ContentEncoding, "br");
 				break;
 			case CompressType.Deflate:
 				_compressStream = new DeflateStream(body, CompressionLevel.Optimal);
-				Headers.Set(RfcHeader.ContentEncoding, "deflate");
+				Headers.Set(HttpRfcHeader.ContentEncoding, "deflate");
 				break;
 			case CompressType.GZip:
 				_compressStream = new GZipStream(body, CompressionLevel.Optimal);
-				Headers.Set(RfcHeader.ContentEncoding, "gzip");
+				Headers.Set(HttpRfcHeader.ContentEncoding, "gzip");
 				break;
 			default:
 				return;
