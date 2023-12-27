@@ -17,6 +17,8 @@ public class Version11Options {
 	public bool EnableCompression { get; set; } = true;
 
 	public int MinCompressionSize { get; set; } = 1024;
+
+	public int StreamReadBufferSize { get; set; } = 4096;
 }
 
 public class Version11Protocol(IHandler handler, Version11Options options) : ITcpProtocol {
@@ -50,9 +52,25 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 	private async Task ReadRequests(TcpConnection conn) {
 		var reader = new ExtAsyncReader(conn);
-		var tmp = new MemoryStream(1024);
+		var tmp = conn.MemoryStreamPool.Get();
+		tmp.Capacity = options.StreamReadBufferSize;
 
-		var ctx = new RequestCtx();
+		var ctx = new RequestCtx {
+			tmp = tmp.GetBuffer(),
+			Request = {
+				body = conn.MemoryStreamPool.Get()
+			},
+			Response = {
+				body = conn.MemoryStreamPool.Get()
+			}
+		};
+
+		conn.OnClose += () => {
+			conn.MemoryStreamPool.Put(tmp);
+			conn.MemoryStreamPool.Put((ReuseableMemoryStream)ctx.Request.body);
+			conn.MemoryStreamPool.Put((ReuseableMemoryStream)ctx.Response.body);
+		};
+
 		var req = ctx.Request;
 		var readStatus = MessageReadStatus.None;
 		long flBytesSize = 0;
@@ -229,7 +247,6 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 		var et = exception.GetType();
 		if (et == typeof(SocketException) || et == typeof(IOException)) {
-			Console.WriteLine($"Connection Lost, {exception.Message}");
 			return;
 		}
 

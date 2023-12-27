@@ -5,10 +5,10 @@ using echo.primary.utils;
 namespace echo.primary.logging;
 
 public class RotationOptions(string FileName = "", long BySize = 0, bool ByDate = false, int BufferSize = 4096) {
-	[Ini] public string FileName { get; set; } = FileName;
-	[Ini] public long BySize { get; set; } = BySize;
-	[Ini] public bool ByDate { get; set; } = ByDate;
-	[Ini] public int BufferSize { get; set; } = BufferSize;
+	public string FileName { get; set; } = FileName;
+	public long BySize { get; set; } = BySize;
+	public bool ByDate { get; set; } = ByDate;
+	public int BufferSize { get; set; } = BufferSize;
 }
 
 public class RotationAppender : IAppender {

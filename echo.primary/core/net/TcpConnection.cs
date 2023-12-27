@@ -1,22 +1,34 @@
 ﻿using System.Net.Security;
 using System.Net.Sockets;
 using echo.primary.core.io;
+using echo.primary.utils;
 using echo.primary.logging;
 
 namespace echo.primary.core.net;
 
-public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyncReader, IAsyncWriter {
+public class TcpConnection(TcpServer server, Socket socket)
+	: IDisposable, IAsyncReader, IAsyncWriter {
 	private SslStream? _sslStream;
 	private bool _closed;
 	private ITcpProtocol? _protocol;
 	private BufferedStream? _stream;
-
 	public Logger Logger => server.Logger;
 	public Socket Socket { get; } = socket;
-
+	public Pool<ReuseableMemoryStream> MemoryStreamPool => server.pool;
 	public bool IsAlive => !_closed && Socket.Connected;
-
 	public bool IsOverSsl => _sslStream != null;
+
+
+	private List<Action>? _onCloseHooks;
+
+	public event Action OnClose {
+		add {
+			_onCloseHooks ??= new();
+			_onCloseHooks.Add(value);
+		}
+
+		remove => _onCloseHooks?.Remove(value);
+	}
 
 	private void EnsureAlive() {
 		if (_closed || _stream == null) {
@@ -31,8 +43,9 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 
 	public Task Write(MemoryStream ms) {
 		EnsureAlive();
-		return _stream!.WriteAsync(ms.ToArray()).AsTask();
+		return _stream!.WriteAsync(ms.GetBuffer().AsMemory()[..(int)ms.Position]).AsTask();
 	}
+
 	public Task Write(ReadOnlyMemory<byte> ms) {
 		EnsureAlive();
 		return _stream!.WriteAsync(ms).AsTask();
@@ -132,27 +145,15 @@ public class TcpConnection(TcpServer server, Socket socket) : IDisposable, IAsyn
 		if (_closed) return;
 		_closed = true;
 
-
-		try {
-			_protocol?.ConnectionLost(exception);
-		}
-		catch {
-			// ignored
+		if (_onCloseHooks != null) {
+			foreach (var action in _onCloseHooks) {
+				action();
+			}
 		}
 
-		try {
-			server.Disconnect(this);
-		}
-		catch {
-			// ignored
-		}
-
-		try {
-			_protocol?.Dispose();
-		}
-		catch {
-			// ignored
-		}
+		_protocol?.ConnectionLost(exception);
+		server.Disconnect(this);
+		_protocol?.Dispose();
 
 		try {
 			_stream?.Close();

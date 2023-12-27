@@ -17,14 +17,13 @@ public class TcpEchoProtocol : ITcpProtocol {
 		var tmp = new MemoryStream();
 		while (Connection.IsAlive) {
 			await reader.ReadUntil(tmp, (byte)'\n', timeoutMills: 5_000, maxBytesSize: 4096);
-			await DataReceived(tmp.ToArray(), (int)tmp.Position);
+			await DataReceived(tmp.GetBuffer().AsMemory()[..(int)tmp.Position]);
 		}
 	}
 
-	private async Task DataReceived(byte[] buf, int size) {
-		var bytes = buf.Take(size).ToArray();
+	private async Task DataReceived(ReadOnlyMemory<byte> bytes) {
 		Connection.Logger.Info(
-			$"DataReceived: {Connection.Socket.RemoteEndPoint} {bytes.Length} {Encoding.UTF8.GetString(bytes).Trim()}"
+			$"DataReceived: {Connection.Socket.RemoteEndPoint} {bytes.Length} {Encoding.UTF8.GetString(bytes.Span).Trim()}"
 		);
 		await Connection.Write(bytes);
 		await Connection.Flush();

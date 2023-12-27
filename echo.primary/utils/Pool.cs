@@ -1,11 +1,11 @@
-﻿namespace echo.primary.core.sync;
+﻿namespace echo.primary.utils;
 
 public interface IReuseable : IDisposable {
 	bool CanReuse { get; }
 	void Reset();
 }
 
-public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 16) where T : IReuseable {
+public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReuseable {
 	public delegate T Constructor();
 
 	public delegate T Prepare(T obj);

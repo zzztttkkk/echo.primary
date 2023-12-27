@@ -17,7 +17,7 @@ enum MessageReadStatus {
 public class Message {
 	internal readonly string[] flps;
 	internal HttpHeaders? herders;
-	internal MemoryStream? body;
+	internal MemoryStream body = null!;
 
 	protected Message() {
 		flps = new string[3];
@@ -25,7 +25,7 @@ public class Message {
 
 	internal void Reset() {
 		herders?.Clear();
-		body?.SetLength(0);
+		body.SetLength(0);
 	}
 }
 
@@ -68,7 +68,6 @@ public enum BodyType {
 	PlainText,
 	Binary,
 	JSON,
-	Serializer,
 	File,
 	Stream,
 }
@@ -84,7 +83,7 @@ public class Response : Message {
 	private CompressType? _compressType;
 	private int _miniCompressionSize;
 	private BodyType? _bodyType;
-	private Stream? _stream;
+	internal Stream? _stream;
 
 	public int StatusCode {
 		get => string.IsNullOrEmpty(flps[1]) ? 0 : int.Parse(flps[1]);
@@ -142,7 +141,7 @@ public class Response : Message {
 
 	public BodyType BodyType {
 		get => _bodyType ?? BodyType.None;
-		set {
+		private set {
 			ResetBodyTmp();
 			_bodyType = value;
 		}
@@ -179,26 +178,25 @@ public class Response : Message {
 
 			if (_compressType == null || body.Position < _miniCompressionSize) return;
 
-			var data = new byte[body.Position];
-			Array.Copy(body.ToArray(), data, body.Position);
-			body.Position = 0;
+			var prevData = body.ToArray();
 
+			body.Position = 0;
 			AutoCompressWriter();
-			_compressStream!.Write(data);
+			_compressStream!.Write(prevData);
 		}
 	}
 
 	public void Write(byte[] buf) {
-		if (_bodyType is not BodyType.Binary) {
-			_bodyType = BodyType.Binary;
+		if (BodyType is not BodyType.Binary) {
+			BodyType = BodyType.Binary;
 		}
 
 		WriteBytes(buf.AsSpan());
 	}
 
 	public void Write(string txt, Encoding? encoding = null) {
-		if (_bodyType is not BodyType.PlainText) {
-			_bodyType = BodyType.PlainText;
+		if (BodyType is not BodyType.PlainText) {
+			BodyType = BodyType.PlainText;
 		}
 
 		WriteBytes((encoding ?? Encoding.UTF8).GetBytes(txt).AsSpan());
@@ -207,26 +205,13 @@ public class Response : Message {
 	public void Write(StringBuilder sb) => Write(sb.ToString());
 
 	public void WriteJSON(object val, JsonSerializerOptions? options = null) {
-		if (_bodyType is not BodyType.JSON) {
-			_bodyType = BodyType.JSON;
+		if (body is { Position: > 0 }) {
+			ResetBodyTmp();
 		}
 
-		AutoCompressWriter();
+		BodyType = BodyType.JSON;
+
 		JsonSerializer.Serialize(_compressStream ?? body!, val, options);
-	}
-
-	public void WriteObject(object val, ISerializer serializer) {
-		if (_bodyType is not BodyType.Serializer) {
-			_bodyType = BodyType.Serializer;
-		}
-
-		var contentType = serializer.ContentType;
-		if (!string.IsNullOrEmpty(contentType)) {
-			Headers.ContentType = contentType;
-		}
-
-		AutoCompressWriter();
-		serializer.Serialize(_compressStream ?? body!, val);
 	}
 
 	public void WriteFile(string path, Tuple<long, long>? range = null, bool viaSendFile = false) {

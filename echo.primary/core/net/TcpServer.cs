@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using echo.primary.utils;
 using echo.primary.logging;
 
 namespace echo.primary.core.net;
@@ -8,13 +9,13 @@ using System.Net.Sockets;
 
 public delegate ITcpProtocol TcpProtocolConstructor();
 
-delegate void OnAcceptFunc(Socket sock, TcpProtocolConstructor constructor);
-
 public class TcpServer : IDisposable {
 	public TcpSocketOptions TcpSocketOptions { get; } = new();
 	public Logger Logger { get; } = new();
 
 	public string Name { get; } = "TcpServer";
+
+	internal Pool<ReuseableMemoryStream> pool = new(() => new ReuseableMemoryStream());
 
 	public TcpServer() : this("TcpServer") {
 	}
@@ -77,6 +78,8 @@ public class TcpServer : IDisposable {
 
 	private Socket? _sock;
 	private bool _stopped;
+
+	private delegate void OnAcceptFunc(Socket sock, TcpProtocolConstructor constructor);
 
 	public async Task Start(string addr, ushort port, TcpProtocolConstructor constructor) {
 		TcpSocketOptions.SslOptions?.Load();
