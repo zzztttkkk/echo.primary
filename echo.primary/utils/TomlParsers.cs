@@ -33,6 +33,9 @@ public static class Parsers {
 			var items = new List<UnitItem>();
 
 			switch (src) {
+				case TomlTable table: {
+					break;
+				}
 				case string txt: {
 					items = Items(txt);
 					break;
