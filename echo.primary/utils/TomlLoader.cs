@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Tomlyn;
@@ -25,12 +26,7 @@ public class Toml : Attribute {
 				throw new Exception($"{ParserType!.FullName} is not a {nameof(ITomlDeserializer)}");
 			}
 
-			var constructor = ParserType.GetConstructor([]);
-			if (constructor == null) {
-				throw new Exception($"{ParserType!.FullName} ha s no public default constructor");
-			}
-
-			return (ITomlDeserializer)constructor.Invoke(null);
+			return (ITomlDeserializer)Activator.CreateInstance(ParserType!)!;
 		}
 	}
 }
@@ -80,13 +76,29 @@ public static class TomlLoader {
 
 	public static void Register(Type ft, ParseFunc func) => Parses.Add(ft, func);
 
-	private static readonly JsonNamingPolicy[] AllNameingPolicy = [
+	private static readonly JsonNamingPolicy[] AllNamingPolicy = [
 		JsonNamingPolicy.CamelCase,
 		JsonNamingPolicy.KebabCaseLower,
 		JsonNamingPolicy.KebabCaseUpper,
 		JsonNamingPolicy.SnakeCaseLower,
 		JsonNamingPolicy.SnakeCaseUpper
 	];
+
+	private static bool IsSimpleType(Type t) {
+		return t.IsPrimitive || t == typeof(string);
+	}
+
+	private static object ToSimpleType(object? val, Type type) {
+		return "";
+	}
+
+	private static object ToClsType(object? val, Type type) {
+		return "";
+	}
+
+	private static void BindForSimpleType(object dst, object val, PropertyInfo property, Type type) {
+	}
+
 
 	private static void Bind(TomlTable table, object obj) {
 		foreach (var property in obj.GetType().GetProperties()) {
@@ -95,7 +107,7 @@ public static class TomlLoader {
 			var attr = property.GetCustomAttributes<Toml>(true).FirstOrDefault(new Toml());
 			if (attr.Ingored) continue;
 			attr.Aliases ??= [];
-			foreach (var policy in AllNameingPolicy) {
+			foreach (var policy in AllNamingPolicy) {
 				attr.Aliases.Add(policy.ConvertName(property.Name));
 			}
 
@@ -129,14 +141,51 @@ public static class TomlLoader {
 				continue;
 			}
 
-			Parses.TryGetValue(property.PropertyType, out var func);
-			if (func == null) {
-				throw new Exception(
-					$"unregistered type: {property.PropertyType.FullName}, {obj.GetType().FullName}.{property.Name}"
-				);
+			var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+			if (IsSimpleType(type)) {
+				property.SetValue(obj, ToSimpleType(pv, type));
 			}
+			else {
+				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)) {
+					var eleType = type.GetGenericArguments()[0];
+					var lst = Activator.CreateInstance(type);
 
-			property.SetValue(obj, func(pv));
+					switch (pv) {
+						case TomlArray ary: {
+							foreach (var ele in ary) {
+								if (IsSimpleType(eleType)) {
+									type.GetMethod("Add")!.Invoke(lst, [ToSimpleType(ele, eleType)]);
+								}
+								else {
+									type.GetMethod("Add")!.Invoke(lst, [ToClsType(ele, eleType)]);
+								}
+							}
+
+							break;
+						}
+						case TomlTableArray ary: {
+							foreach (var ele in ary) {
+								if (IsSimpleType(eleType)) {
+									type.GetMethod("Add")!.Invoke(lst, [ToSimpleType(ele, eleType)]);
+								}
+								
+								
+								else {
+									type.GetMethod("Add")!.Invoke(lst, [ToClsType(ele, eleType)]);
+								}
+							}
+
+							break;
+						}
+						default: {
+							throw new Exception("");
+						}
+					}
+				}
+				else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>)) {
+					
+				}
+			}
 		}
 	}
 
