@@ -4,17 +4,17 @@ using echo.primary.utils;
 namespace test;
 
 class Foo {
-	public Color Color { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.ColorParser))] public Color Color { get; set; }
 
-	public int SizeA { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))] public int SizeA { get; set; }
 
-	public TimeSpan MaxAliveDuration { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.TimeDurationParser))] public TimeSpan MaxAliveDuration { get; set; }
 }
 
 public class TomlLoaderTest {
 	[Test]
 	public void TestBind() {
-		var obj = TomlLoader.Load<Foo>($"{EchoPrimaryProject.ProjectRoot()}/test/v.toml");
+		var obj = TomlLoader.Load<Foo>($"{EchoPrimaryProject.ProjectRoot()}/test/a.toml");
 		Console.WriteLine(JSON.Stringify(obj));
 	}
 

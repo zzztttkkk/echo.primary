@@ -5,7 +5,7 @@ using Tomlyn.Model;
 
 namespace echo.primary.utils;
 
-public static class Parsers {
+public static class TomlParsers {
 	private static readonly Regex UnitGroupRegexp = new(@"(?<nums>\d+)\s*(?<unit>[a-zA-Z]*)");
 
 	private record UnitItem(string Nums, string Unit) {
@@ -133,20 +133,22 @@ public static class Parsers {
 		}
 	}
 
-	internal class ColorParser : ITomlDeserializer {
-		private static int? s2i(string? v) {
-			if (string.IsNullOrEmpty(v)) return null;
+	public class ColorParser : ITomlDeserializer {
+		private static int? s2i(object? v) {
+			if (v == null) return null;
+			if (Reflection.IsIntType(v.GetType())) {
+				return (int)Reflection.ObjectToInt(v, typeof(int));
+			}
+
+			if (v.GetType() != typeof(string)) {
+				throw new Exception();
+			}
 
 			try {
-				return Convert.ToInt32(v);
+				return Convert.ToInt32((string)v);
 			}
 			catch {
-				try {
-					return Convert.ToInt32(v, 16);
-				}
-				catch {
-					return null;
-				}
+				return Convert.ToInt32((string)v, fromBase: 16);
 			}
 		}
 
@@ -156,10 +158,21 @@ public static class Parsers {
 			}
 
 			switch (src) {
+				case TomlTable table: {
+					var r = s2i(TomlValueHelper.Get(table, "r"));
+					var g = s2i(TomlValueHelper.Get(table, "g"));
+					var b = s2i(TomlValueHelper.Get(table, "b"));
+					var a = s2i(TomlValueHelper.Get(table, "a"));
+					return Color.FromArgb(a ?? 255, r ?? 0, g ?? 0, b ?? 0);
+				}
 				case string txt: {
 					txt = txt.Trim();
 					if (txt.StartsWith('#')) {
 						txt = txt[1..].Trim();
+					}
+
+					if (txt.Length == 6) {
+						txt = $"ff{txt}";
 					}
 
 					return Color.FromName(txt);
