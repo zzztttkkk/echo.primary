@@ -1,7 +1,7 @@
 ﻿namespace echo.primary.utils;
 
 public static class ThisProject {
-	private static string _RootPath = "";
+	private static string _rootPath = "";
 
 	private static string GetRootPath() {
 		var tmp = Environment.CurrentDirectory;
@@ -18,11 +18,11 @@ public static class ThisProject {
 
 	public static string RootPath {
 		get {
-			if (string.IsNullOrEmpty(_RootPath)) {
-				_RootPath = GetRootPath();
+			if (string.IsNullOrEmpty(_rootPath)) {
+				_rootPath = GetRootPath();
 			}
 
-			return _RootPath;
+			return _rootPath;
 		}
 	}
 
