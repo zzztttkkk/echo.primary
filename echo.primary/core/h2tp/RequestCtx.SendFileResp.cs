@@ -64,7 +64,7 @@ public partial class RequestCtx {
 
 			remain -= rl;
 			if (remain <= 0) {
-				await writer.Write(ChunkedEndding);
+				await writer.Write(ChunkedEnding);
 				break;
 			}
 
@@ -89,7 +89,7 @@ public partial class RequestCtx {
 		while (true) {
 			var rl = await stream.ReadAsync(buf);
 			if (rl == 0) {
-				await writer.Write(ChunkedEndding);
+				await writer.Write(ChunkedEnding);
 				break;
 			}
 
@@ -143,7 +143,7 @@ public partial class RequestCtx {
 			await writer.Write(NewLine);
 		}
 
-		await writer.Write(ChunkedEndding);
+		await writer.Write(ChunkedEnding);
 
 		await writer.Flush();
 	}
@@ -177,7 +177,7 @@ public partial class RequestCtx {
 			await writer.Write(NewLine);
 		}
 
-		await writer.Write(ChunkedEndding);
+		await writer.Write(ChunkedEnding);
 
 		await writer.Flush();
 	}

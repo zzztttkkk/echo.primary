@@ -14,7 +14,7 @@ public class TcpConnection(TcpServer server, Socket socket)
 	private BufferedStream? _stream;
 	public Logger Logger => server.Logger;
 	public Socket Socket { get; } = socket;
-	public Pool<ReuseableMemoryStream> MemoryStreamPool => server.pool;
+	public Pool<ReusableMemoryStream> MemoryStreamPool => server.pool;
 	public bool IsAlive => !_closed && Socket.Connected;
 	public bool IsOverSsl => _sslStream != null;
 

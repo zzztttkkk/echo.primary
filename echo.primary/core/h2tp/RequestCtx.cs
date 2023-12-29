@@ -1,24 +1,31 @@
 ﻿using System.Text;
 using echo.primary.core.io;
+using echo.primary.core.net;
 using echo.primary.utils;
 
 namespace echo.primary.core.h2tp;
 
 public partial class RequestCtx {
-	internal CancellationToken? _cancellationToken = null;
-	internal bool _handleTimeout = false;
+	internal CancellationToken? CancellationToken = null;
+	internal bool HandleTimeout = false;
+	internal TcpConnection TcpConnection = null!;
+	internal MemoryStream SocketReadBuffer = null!;
+	internal bool Hijacked;
+
 	private readonly StringBuilder _respWriteBuf = new(1024);
 	public Request Request { get; } = new();
 	public Response Response { get; } = new();
 
 	private static readonly byte[] NewLine = "\r\n"u8.ToArray();
-	private static readonly byte[] ChunkedEndding = "0\r\n\r\n"u8.ToArray();
+	private static readonly byte[] ChunkedEnding = "0\r\n\r\n"u8.ToArray();
 
 	internal void Reset() {
 		Request.Reset();
 		Response.Reset();
 		_respWriteBuf.Clear();
 	}
+
+	public bool ShouldKeepAlive => false;
 
 	private async Task SendResponseHeader(IAsyncWriter writer) {
 		var version = string.IsNullOrEmpty(Response.flps[0]) ? "HTTP/1.1" : Response.flps[0];
@@ -37,7 +44,7 @@ public partial class RequestCtx {
 	private partial Task SendFileRefResponse(IAsyncWriter writer);
 
 	internal async Task SendResponse(IAsyncWriter writer) {
-		if (_handleTimeout) return;
+		if (HandleTimeout) return;
 
 		if (Response.BodyType != BodyType.None && string.IsNullOrEmpty(Response.Headers.ContentType)) {
 			Response.Headers.ContentType = Response.BodyType switch {
@@ -73,5 +80,13 @@ public partial class RequestCtx {
 			await writer.Write(Response.body.GetBuffer().AsMemory()[..(int)Response.body.Position]);
 			await writer.Flush();
 		}
+	}
+
+	public delegate void ConnHandleFunc(TcpConnection connection, MemoryStream tmp);
+
+	void Hijack(ConnHandleFunc handle) {
+		if (Hijacked) throw new Exception("");
+		Hijacked = true;
+		handle(TcpConnection, SocketReadBuffer);
 	}
 }

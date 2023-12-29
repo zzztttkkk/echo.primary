@@ -1,11 +1,11 @@
 ﻿namespace echo.primary.utils;
 
-public interface IReuseable : IDisposable {
+public interface IReusable : IDisposable {
 	bool CanReuse { get; }
 	void Reset();
 }
 
-public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReuseable {
+public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReusable {
 	public delegate T Constructor();
 
 	public delegate T Prepare(T obj);
@@ -49,8 +49,8 @@ public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) wher
 	}
 }
 
-public class ReuseableMemoryStream(int size = 0) : MemoryStream(size), IReuseable {
-	public bool CanReuse => Capacity <= 1024_00;
+public class ReusableMemoryStream(int size = 0) : MemoryStream(size), IReusable {
+	public bool CanReuse => Capacity <= 32768; // 32KB
 
 	public void Reset() {
 		Position = 0;

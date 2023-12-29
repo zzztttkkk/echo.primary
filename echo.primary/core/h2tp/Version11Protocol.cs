@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Diagnostics;
+using System.Net.Sockets;
 using System.Text;
 using echo.primary.core.io;
 using echo.primary.core.net;
@@ -22,7 +23,8 @@ public class Version11Options {
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
 	public int ReadTimeout { get; set; } = 10_000;
 
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))] public int HandleTimeout { get; set; } = 0;
+	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
+	public int HandleTimeout { get; set; } = 0;
 
 	[Toml(Optional = true)] public bool EnableCompression { get; set; } = true;
 
@@ -36,23 +38,23 @@ public class Version11Options {
 public class Version11Protocol(IHandler handler, Version11Options options) : ITcpProtocol {
 	private TcpConnection? _connection;
 
-	public Version11Protocol(IHandler handler) : this(handler, new()) {
-	}
+	public Version11Protocol(IHandler handler) : this(handler, new()) { }
 
 	public void Dispose() {
 		_connection?.Dispose();
+		GC.SuppressFinalize(this);
 	}
 
 	public void ConnectionMade(TcpConnection conn) {
 		_connection = conn;
-		_ = ReadRequests(conn).ContinueWith(t => {
+		_ = ServeConn(conn).ContinueWith(t => {
 			if (t.Exception != null && conn.IsAlive) {
 				conn.Close(t.Exception);
 			}
 		});
 	}
 
-	private int remainMills(ulong begin) {
+	private int RemainMills(ulong begin) {
 		if (options.ReadTimeout < 1) return -1;
 		var remain = options.ReadTimeout - (int)(Time.unixmills() - begin);
 		if (remain < 0) {
@@ -62,12 +64,14 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 		return remain;
 	}
 
-	private async Task ReadRequests(TcpConnection conn) {
+	private async Task ServeConn(TcpConnection conn) {
 		var reader = new ExtAsyncReader(conn);
 		var tmp = conn.MemoryStreamPool.Get();
 		tmp.Capacity = options.StreamReadBufferSize;
 
 		var ctx = new RequestCtx {
+			TcpConnection = conn,
+			SocketReadBuffer = tmp,
 			tmp = tmp.GetBuffer(),
 			Request = {
 				body = conn.MemoryStreamPool.Get()
@@ -79,25 +83,28 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 		conn.OnClose += () => {
 			conn.MemoryStreamPool.Put(tmp);
-			conn.MemoryStreamPool.Put((ReuseableMemoryStream)ctx.Request.body);
-			conn.MemoryStreamPool.Put((ReuseableMemoryStream)ctx.Response.body);
+			conn.MemoryStreamPool.Put((ReusableMemoryStream)ctx.Request.body);
+			conn.MemoryStreamPool.Put((ReusableMemoryStream)ctx.Response.body);
 		};
 
 		var req = ctx.Request;
 		var readStatus = MessageReadStatus.None;
 		long flBytesSize = 0;
-		int headersCount = 0;
+		var headersCount = 0;
 
 		var begin = Time.unixmills();
+		var hijacked = false;
 
 		while (conn.IsAlive) {
+			if (hijacked) break;
+
 			switch (readStatus) {
 				case MessageReadStatus.None: {
 					flBytesSize = 0;
 					await reader.ReadUntil(
 						tmp, (byte)' ',
 						maxBytesSize: options.MaxFirstLineBytesSize,
-						timeoutMills: remainMills(begin)
+						timeoutMills: RemainMills(begin)
 					);
 					req.flps[0] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
 					flBytesSize += tmp.Position;
@@ -108,7 +115,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 					await reader.ReadUntil(
 						tmp, (byte)' ',
 						maxBytesSize: options.MaxFirstLineBytesSize,
-						timeoutMills: remainMills(begin)
+						timeoutMills: RemainMills(begin)
 					);
 					req.flps[1] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
 					if (string.IsNullOrEmpty(req.flps[1])) {
@@ -127,7 +134,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 					await reader.ReadUntil(
 						tmp, (byte)'\n',
 						maxBytesSize: options.MaxFirstLineBytesSize,
-						timeoutMills: remainMills(begin)
+						timeoutMills: RemainMills(begin)
 					);
 					req.flps[2] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
 					flBytesSize += tmp.Position;
@@ -145,7 +152,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 							await reader.ReadLine(
 								tmp,
 								maxBytesSize: options.MaxHeaderLineBytesSize,
-								timeoutMills: remainMills(begin),
+								timeoutMills: RemainMills(begin),
 								encoding: Encoding.Latin1
 							)
 						).Trim();
@@ -189,13 +196,8 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						throw new Exception($"bad request, reach {nameof(options.MaxBodyBytesSize)}");
 					}
 
-					if (req.body == null) {
-						req.body = new((int)bodySize);
-					}
-					else {
-						req.body.SetLength(0);
-						req.body.Capacity = (int)bodySize;
-					}
+					req.body.SetLength(0);
+					req.body.Capacity = (int)bodySize;
 
 					while (true) {
 						var rtmp = tmp.GetBuffer();
@@ -203,7 +205,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 							rtmp = rtmp[..(int)bodySize];
 						}
 
-						await reader.ReadExactly(rtmp, timeoutMills: remainMills(begin));
+						await reader.ReadExactly(rtmp, timeoutMills: RemainMills(begin));
 
 						req.body.Write(rtmp);
 						bodySize -= rtmp.Length;
@@ -218,8 +220,23 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 				}
 				case MessageReadStatus.BODY_OK: {
 					await HandleRequest(ctx);
+					hijacked = ctx.Hijacked;
+					if (!hijacked) {
+						if (ctx.ShouldKeepAlive) {
+							ctx.Reset();
+							readStatus = MessageReadStatus.None;
+							flBytesSize = 0;
+							headersCount = 0;
+							begin = Time.unixmills();
+							continue;
+						}
+
+						conn.Close();
+					}
+
 					break;
 				}
+				default: throw new UnreachableException();
 			}
 		}
 	}
@@ -229,9 +246,9 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 		try {
 			if (options.HandleTimeout > 0) {
 				cts = new CancellationTokenSource();
-				ctx._cancellationToken = cts.Token;
-				ctx._cancellationToken.Value.Register(() => {
-					ctx._handleTimeout = true;
+				ctx.CancellationToken = cts.Token;
+				ctx.CancellationToken.Value.Register(() => {
+					ctx.HandleTimeout = true;
 					_connection!.Close(new Exception("handle timeout"));
 				});
 				cts.CancelAfter(options.HandleTimeout);

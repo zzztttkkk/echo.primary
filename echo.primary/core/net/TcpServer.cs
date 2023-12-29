@@ -15,7 +15,7 @@ public class TcpServer : IDisposable {
 
 	public string Name { get; } = "TcpServer";
 
-	internal Pool<ReuseableMemoryStream> pool = new(() => new ReuseableMemoryStream());
+	internal Pool<ReusableMemoryStream> pool = new(() => new ReusableMemoryStream());
 
 	public TcpServer() : this("TcpServer") {
 	}

@@ -77,57 +77,62 @@ public static class TomlParsers {
 
 	public class DurationParser : ITomlDeserializer {
 		public object Parse(Type targetType, object? src) {
+			if (src == null) {
+				throw new Exception("bad toml value type, expected a string or int number");
+			}
+
 			if (!Reflection.IsIntType(targetType) && targetType != typeof(TimeSpan)) {
 				throw new Exception("the prop is not an int");
 			}
 
-			var items = new List<UnitItem>();
-
-			switch (src) {
-				case string txt: {
-					items = Items(txt);
-					break;
-				}
-			}
-
 			ulong bv = 0;
-			foreach (var item in items) {
-				switch (item.Unit.Trim().ToUpper()) {
-					case "":
-					case "MS":
-					case "MILLS": {
-						bv += Convert.ToUInt64(item.Nums.Trim());
-						break;
-					}
-					case "S":
-					case "SEC": {
-						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000;
-						break;
-					}
-					case "M":
-					case "MIN": {
-						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60;
-						break;
-					}
-					case "H":
-					case "HOUR": {
-						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60;
-						break;
-					}
-					case "D":
-					case "DAY": {
-						bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60 * 24;
-						break;
-					}
-					default: {
-						throw new Exception("bad value, can not cast to byte size");
+
+			if (Reflection.IsIntType(src.GetType())) {
+				bv = (ulong)Reflection.ObjectToInt(src, typeof(ulong));
+			}
+			else {
+				if (src.GetType() != typeof(string)) {
+					throw new Exception("bad toml value type, expected a string or int number");
+				}
+
+				foreach (var item in Items((string)src)) {
+					switch (item.Unit.Trim().ToUpper()) {
+						case "":
+						case "MS":
+						case "MILLS": {
+							bv += Convert.ToUInt64(item.Nums.Trim());
+							break;
+						}
+						case "S":
+						case "SEC": {
+							bv += Convert.ToUInt64(item.Nums.Trim()) * 1000;
+							break;
+						}
+						case "M":
+						case "MIN": {
+							bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60;
+							break;
+						}
+						case "H":
+						case "HOUR": {
+							bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60;
+							break;
+						}
+						case "D":
+						case "DAY": {
+							bv += Convert.ToUInt64(item.Nums.Trim()) * 1000 * 60 * 60 * 24;
+							break;
+						}
+						default: {
+							throw new Exception("bad value, can not cast to byte size");
+						}
 					}
 				}
 			}
 
-			return Reflection.IsIntType(targetType)
-				? Reflection.ObjectToInt(bv, targetType)
-				: TimeSpan.FromMilliseconds(bv);
+			return targetType == typeof(TimeSpan)
+				? TimeSpan.FromMilliseconds(bv)
+				: Reflection.ObjectToInt(bv, targetType);
 		}
 	}
 
@@ -154,6 +159,8 @@ public static class TomlParsers {
 			if (targetType != typeof(Color)) {
 				throw new Exception("the prop is not a color");
 			}
+
+			if (src == null) return Color.Black;
 
 			switch (src) {
 				case TomlTable table: {
