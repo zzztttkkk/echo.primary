@@ -43,8 +43,8 @@ public class ThreadLocalPool<T>(ThreadLocalPool<T>.Constructor constructor, int 
 	}
 }
 
-public class ReusableMemoryStream(int size = 0) : MemoryStream(size), IReusable {
-	public bool CanReuse => Capacity <= 32768; // 32KB
+public class ReusableMemoryStream(int size = 0, int maxCap = 32768) : MemoryStream(size), IReusable {
+	public bool CanReuse => Capacity <= maxCap;
 
 	public void Reset() {
 		Position = 0;

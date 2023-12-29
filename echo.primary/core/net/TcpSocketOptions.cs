@@ -35,6 +35,15 @@ public class TcpSocketOptions {
 	[Toml(Optional = true)] public int KeepAliveInterval { get; set; } = 0;
 	[Toml(Optional = true)] public int KeepAliveRetryCount { get; set; } = 0;
 	[Toml(Optional = true)] public bool NoDelay { get; set; } = false;
-	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))] public uint BufferSize { get; set; } = 8192;
+
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))]
+	public uint BufferSize { get; set; } = 8192;
+
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))]
+	public int ReusableBufferInitCap { get; set; } = 0;
+
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))]
+	public int ReusableBufferMaxCap { get; set; } = 30 * 1024;
+
 	[Toml(Optional = true)] public SslOptions? SslOptions { get; set; } = null;
 }

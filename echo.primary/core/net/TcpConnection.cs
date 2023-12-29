@@ -18,7 +18,6 @@ public class TcpConnection(TcpServer server, Socket socket)
 	public bool IsAlive => !_closed && Socket.Connected;
 	public bool IsOverSsl => _sslStream != null;
 
-
 	private List<Action>? _onCloseHooks;
 
 	public event Action OnClose {

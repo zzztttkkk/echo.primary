@@ -9,28 +9,18 @@ using System.Net.Sockets;
 
 public delegate ITcpProtocol TcpProtocolConstructor();
 
-public class TcpServer : IDisposable {
-	public TcpSocketOptions TcpSocketOptions { get; } = new();
-	public Logger Logger { get; } = new();
+public class TcpServer(TcpSocketOptions socketOptions) : IDisposable {
+	public TcpSocketOptions SocketOptions => socketOptions;
+	public Logger Logger { get; set; } = new();
 
-	public string Name { get; } = "TcpServer";
+	public string Name { get; set; } = "TcpServer";
 
-	internal readonly ThreadLocalPool<ReusableMemoryStream> ThreadLocalPool = new(() => new ReusableMemoryStream());
-
-	public TcpServer() : this("TcpServer") { }
-
-	public TcpServer(string name) {
-		Name = name;
-	}
-
-	public TcpServer(TcpSocketOptions options) {
-		TcpSocketOptions = options;
-	}
-
-	public TcpServer(string name, TcpSocketOptions options) {
-		Name = name;
-		TcpSocketOptions = options;
-	}
+	internal readonly ThreadLocalPool<ReusableMemoryStream> ThreadLocalPool = new(
+		() => new ReusableMemoryStream(
+			socketOptions.ReusableBufferInitCap,
+			socketOptions.ReusableBufferMaxCap
+		)
+	);
 
 	private readonly List<Action> _beforeTcpServerListenHandlers = new();
 
@@ -56,7 +46,7 @@ public class TcpServer : IDisposable {
 
 		var conn = new TcpConnection(this, sock);
 		Connections[conn] = 1;
-		conn.Run(TcpSocketOptions, constructor());
+		conn.Run(socketOptions, constructor());
 	}
 
 	private void OnAcceptSsl(Socket sock, TcpProtocolConstructor constructor) {
@@ -67,7 +57,7 @@ public class TcpServer : IDisposable {
 
 		var conn = new TcpConnection(this, sock);
 		Connections[conn] = 1;
-		conn.RunSsl(TcpSocketOptions, TcpSocketOptions.SslOptions!, constructor());
+		conn.RunSsl(socketOptions, socketOptions.SslOptions!, constructor());
 	}
 
 	public void Disconnect(TcpConnection connection) {
@@ -81,19 +71,19 @@ public class TcpServer : IDisposable {
 	private delegate void OnAcceptFunc(Socket sock, TcpProtocolConstructor constructor);
 
 	public async Task Start(string addr, ushort port, TcpProtocolConstructor constructor) {
-		TcpSocketOptions.SslOptions?.Load();
-		OnAcceptFunc DoAccept = TcpSocketOptions.SslOptions == null ? OnAccept : OnAcceptSsl;
+		socketOptions.SslOptions?.Load();
+		OnAcceptFunc doAccept = socketOptions.SslOptions == null ? OnAccept : OnAcceptSsl;
 
 		var endpint = new IPEndPoint(IPAddress.Parse(addr), port);
 
 		var sock = new Socket(endpint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-		sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, TcpSocketOptions.ReuseAddress);
+		sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, socketOptions.ReuseAddress);
 		sock.SetSocketOption(
 			SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse,
-			TcpSocketOptions.ExclusiveAddressUse
+			socketOptions.ExclusiveAddressUse
 		);
 		if (sock.AddressFamily == AddressFamily.InterNetworkV6) {
-			sock.DualMode = TcpSocketOptions.DualMode;
+			sock.DualMode = socketOptions.DualMode;
 		}
 
 		sock.Bind(endpint);
@@ -103,15 +93,15 @@ public class TcpServer : IDisposable {
 		}
 
 		_sock = sock;
-		sock.Listen(TcpSocketOptions.Backlog);
+		sock.Listen(socketOptions.Backlog);
 		Logger.Info(
-			$"{Name} is listening @ {addr}:{port}, ssl: {TcpSocketOptions.SslOptions != null}, pid: {Environment.ProcessId}"
+			$"{Name} is listening @ {addr}:{port}, ssl: {socketOptions.SslOptions != null}, pid: {Environment.ProcessId}"
 		);
 		_stopped = false;
 
 		while (!_stopped) {
 			try {
-				DoAccept(await sock.AcceptAsync(), constructor);
+				doAccept(await sock.AcceptAsync(), constructor);
 			}
 			catch (SocketException e) {
 				switch (e.SocketErrorCode) {

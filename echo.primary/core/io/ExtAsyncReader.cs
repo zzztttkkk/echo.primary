@@ -3,17 +3,13 @@ using echo.primary.utils;
 
 namespace echo.primary.core.io;
 
-public class ExtAsyncReader(
-	IAsyncReader src,
-	BytesBuffer tmp,
-	int tmpReadSize = 512,
-	int srcReadSize = 4096
-) : IAsyncReader {
-	private readonly byte[] _tmpReadBuf = new byte[tmpReadSize];
-	private readonly byte[] _srcReadBuf = new byte[srcReadSize];
+public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
+	private readonly byte[] _tmpReadBuf = GC.AllocateUninitializedArray<byte>(512); // read from tmp
+	private readonly byte[] _srcReadBuf = GC.AllocateUninitializedArray<byte>(4096); // read from src
+	private bool TmpCanRead => tmp.Stream.Position < tmp.Stream.Length;
 
 	private async Task EnsureTmpCanRead(int timeoutMills) {
-		if (tmp.Stream.Position < tmp.Stream.Length) return;
+		if (TmpCanRead) return;
 
 		var rl = await src.Read(_srcReadBuf, timeoutMills);
 		if (rl < 1) {
@@ -65,10 +61,6 @@ public class ExtAsyncReader(
 		}
 	}
 
-	public Task<string> ReadLine(int capHit, int timeoutMills = 0, int maxBytesSize = 0, Encoding? encoding = null) {
-		return ReadLine(new MemoryStream(capHit), timeoutMills, maxBytesSize, encoding);
-	}
-
 	public async Task<string> ReadLine(
 		MemoryStream dst,
 		int timeoutMills = 0,
@@ -79,40 +71,31 @@ public class ExtAsyncReader(
 		return (encoding ?? Encoding.UTF8).GetString(dst.GetBuffer().AsSpan()[..(int)dst.Position]);
 	}
 
-	public Task<int> Read(byte[] buf, int timeoutMills) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
-			return src.Read(buf, timeoutMills);
-		}
 
-		return Task.FromResult(tmp.Reader.Read(buf));
+	public Task<int> Read(byte[] buf, int timeoutMills) {
+		return !TmpCanRead ? src.Read(buf, timeoutMills) : Task.FromResult(tmp.Reader.Read(buf));
 	}
 
 	public Task<int> Read(Memory<byte> buf, int timeoutMills) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
-			return src.Read(buf, timeoutMills);
-		}
-
-		return Task.FromResult(tmp.Reader.Read(buf.Span));
+		return !TmpCanRead ? src.Read(buf, timeoutMills) : Task.FromResult(tmp.Reader.Read(buf.Span));
 	}
 
 	public Task ReadExactly(byte[] buf, int timeoutMills) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
+		if (!TmpCanRead) {
 			return src.ReadExactly(buf, timeoutMills);
 		}
 
 		var rl = tmp.Reader.Read(buf);
-		if (rl == buf.Length) return Task.CompletedTask;
-		return src.ReadExactly(buf.AsMemory()[rl..], timeoutMills);
+		return rl == buf.Length ? Task.CompletedTask : src.ReadExactly(buf.AsMemory()[rl..], timeoutMills);
 	}
 
 	public Task ReadExactly(Memory<byte> buf, int timeoutMills) {
-		if (tmp.Stream.Position >= tmp.Stream.Length) {
+		if (!TmpCanRead) {
 			return src.ReadExactly(buf, timeoutMills);
 		}
 
 		var rl = tmp.Reader.Read(buf.Span);
-		if (rl == buf.Length) return Task.CompletedTask;
-		return src.ReadExactly(buf[rl..], timeoutMills);
+		return rl == buf.Length ? Task.CompletedTask : src.ReadExactly(buf[rl..], timeoutMills);
 	}
 
 	public async Task<byte> ReadByte(int timeoutMills) {

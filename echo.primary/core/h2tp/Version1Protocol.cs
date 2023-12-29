@@ -47,11 +47,7 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 
 	public void ConnectionMade(TcpConnection conn) {
 		_connection = conn;
-		_ = ServeConn(conn).ContinueWith(t => {
-			if (t.Exception != null && conn.IsAlive) {
-				conn.Close(t.Exception);
-			}
-		});
+		_ = ServeConn(conn).ContinueWith(t => conn.Close(t.Exception));
 	}
 
 	private int RemainMills(ulong begin) {
@@ -65,15 +61,25 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 	}
 
 	private async Task ServeConn(TcpConnection conn) {
-		var readerTmp = conn.MemoryStreamThreadLocalPool.Get((v) => v.Capacity = 4096);
+		var reader = new ExtAsyncReader(
+			conn,
+			new BytesBuffer(
+				conn.MemoryStreamThreadLocalPool.Get(
+					v => {
+						v.Capacity = 4096;
+						conn.OnClose += () => conn.MemoryStreamThreadLocalPool.Put(v);
+					}
+				)
+			)
+		);
 
-		var reader = new ExtAsyncReader(conn, new BytesBuffer(readerTmp));
-
-		var tmp = conn.MemoryStreamThreadLocalPool.Get(v => v.Capacity = options.StreamReadBufferSize);
+		var readTmp = conn.MemoryStreamThreadLocalPool.Get(
+			v => v.Capacity = options.StreamReadBufferSize
+		);
 
 		var ctx = new RequestCtx {
 			TcpConnection = conn,
-			ReadTmp = tmp,
+			ReadTmp = readTmp,
 			Request = {
 				Body = conn.MemoryStreamThreadLocalPool.Get()
 			},
@@ -83,8 +89,7 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 		};
 
 		conn.OnClose += () => {
-			conn.MemoryStreamThreadLocalPool.Put(readerTmp);
-			conn.MemoryStreamThreadLocalPool.Put(tmp);
+			conn.MemoryStreamThreadLocalPool.Put(readTmp);
 			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Request.Body);
 			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Response.Body);
 		};
@@ -102,27 +107,29 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 				case MessageReadStatus.None: {
 					flBytesSize = 0;
 					await reader.ReadUntil(
-						tmp, (byte)' ',
+						readTmp, (byte)' ',
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[0] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
-					flBytesSize += tmp.Position;
+					req.Flps[0] =
+						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]);
+					flBytesSize += readTmp.Position;
 					readStatus = MessageReadStatus.Fl1Ok;
 					break;
 				}
 				case MessageReadStatus.Fl1Ok: {
 					await reader.ReadUntil(
-						tmp, (byte)' ',
+						readTmp, (byte)' ',
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[1] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
+					req.Flps[1] =
+						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]);
 					if (string.IsNullOrEmpty(req.Flps[1])) {
 						req.Flps[1] = "/";
 					}
 
-					flBytesSize += tmp.Position;
+					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
 						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
 					}
@@ -132,12 +139,13 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 				}
 				case MessageReadStatus.Fl2Ok: {
 					await reader.ReadUntil(
-						tmp, (byte)'\n',
+						readTmp, (byte)'\n',
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[2] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
-					flBytesSize += tmp.Position;
+					req.Flps[2] =
+						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 2)]);
+					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
 						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
 					}
@@ -150,7 +158,7 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 					while (true) {
 						var line = (
 							await reader.ReadLine(
-								tmp,
+								readTmp,
 								maxBytesSize: options.MaxHeaderLineBytesSize,
 								timeoutMills: RemainMills(begin),
 								encoding: Encoding.Latin1
@@ -200,7 +208,7 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 					req.Body.Capacity = (int)bodySize;
 
 					while (true) {
-						var rtmp = tmp.GetBuffer();
+						var rtmp = readTmp.GetBuffer();
 						if (bodySize < rtmp.Length) {
 							rtmp = rtmp[..(int)bodySize];
 						}
