@@ -2,17 +2,8 @@
 
 namespace echo.primary.core.io;
 
-public class BytesBuffer {
-	private readonly MemoryStream ms;
-	public BinaryReader Reader { get; }
-	public BinaryWriter Writer { get; }
-
-	public MemoryStream Stream { get; }
-
-	public BytesBuffer(int cap) {
-		ms = new(cap);
-		Writer = new(ms, encoding: Encoding.UTF8, leaveOpen: true);
-		Reader = new(ms, encoding: Encoding.UTF8, leaveOpen: true);
-		Stream = ms;
-	}
+public class BytesBuffer(MemoryStream ms, Encoding? encoding = null) {
+	public BinaryReader Reader { get; } = new(ms, encoding: encoding ?? Encoding.UTF8, leaveOpen: true);
+	public BinaryWriter Writer { get; } = new(ms, encoding: encoding ?? Encoding.UTF8, leaveOpen: true);
+	public MemoryStream Stream { get; } = ms;
 }

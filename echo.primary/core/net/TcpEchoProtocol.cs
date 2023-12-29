@@ -13,7 +13,13 @@ public class TcpEchoProtocol : ITcpProtocol {
 	}
 
 	private async Task Read() {
-		var reader = new ExtAsyncReader(Connection);
+		var extReaderTmp = Connection.MemoryStreamThreadLocalPool.Get();
+		extReaderTmp.Capacity = 4096;
+		Connection.OnClose += () => {
+			Connection.MemoryStreamThreadLocalPool.Put(extReaderTmp);
+		};
+
+		var reader = new ExtAsyncReader(Connection, new BytesBuffer(extReaderTmp));
 		var tmp = new MemoryStream();
 		while (Connection.IsAlive) {
 			await reader.ReadUntil(tmp, (byte)'\n', timeoutMills: 5_000, maxBytesSize: 4096);

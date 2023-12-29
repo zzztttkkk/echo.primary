@@ -5,27 +5,28 @@ using System.Text.Json;
 
 namespace echo.primary.core.h2tp;
 
-enum MessageReadStatus {
+internal enum MessageReadStatus {
 	None = 0,
-	FL1_OK,
-	FL2_OK,
-	FL3_OK,
-	HEADER_OK,
-	BODY_OK,
+	Fl1Ok,
+	Fl2Ok,
+	Fl3Ok,
+	HeaderOk,
+	BodyOk,
 }
 
 public class Message {
-	internal readonly string[] flps;
-	internal HttpHeaders? herders;
-	internal MemoryStream body = null!;
+	internal readonly string[] Flps;
+	internal HttpHeaders? Herders;
+	internal MemoryStream Body = null!;
 
 	protected Message() {
-		flps = new string[3];
+		Flps = new string[3];
 	}
 
 	internal void Reset() {
-		herders?.Clear();
-		body.SetLength(0);
+		Herders?.Clear();
+		Body.Position = 0;
+		Body.SetLength(0);
 	}
 }
 
@@ -33,21 +34,21 @@ public class Request : Message {
 	internal Uri? _uri;
 
 	public string Method {
-		get => flps[0];
-		set => flps[0] = value;
+		get => Flps[0];
+		set => Flps[0] = value;
 	}
 
 	public Uri Uri => _uri!;
 
 	public string Version {
-		get => flps[2];
-		set => flps[2] = value;
+		get => Flps[2];
+		set => Flps[2] = value;
 	}
 
 	public HttpHeaders Headers {
 		get {
-			herders ??= new HttpHeaders();
-			return herders;
+			Herders ??= new HttpHeaders();
+			return Herders;
 		}
 	}
 
@@ -86,32 +87,28 @@ public class Response : Message {
 	internal Stream? _stream;
 
 	public int StatusCode {
-		get => string.IsNullOrEmpty(flps[1]) ? 0 : int.Parse(flps[1]);
+		get => string.IsNullOrEmpty(Flps[1]) ? 0 : int.Parse(Flps[1]);
 		set {
-			flps[1] = value.ToString();
-			flps[2] = StatusToString.ToString((HttpRfcStatusCode)value);
+			Flps[1] = value.ToString();
+			Flps[2] = StatusToString.ToString((HttpRfcStatusCode)value);
 		}
 	}
 
 	public string StatusText {
-		get => string.IsNullOrEmpty(flps[2]) ? StatusToString.ToString((HttpRfcStatusCode)StatusCode) : flps[2];
-		set => flps[2] = value;
+		get => string.IsNullOrEmpty(Flps[2]) ? StatusToString.ToString((HttpRfcStatusCode)StatusCode) : Flps[2];
+		set => Flps[2] = value;
 	}
 
 	public HttpHeaders Headers {
 		get {
-			herders ??= new HttpHeaders();
-			return herders;
+			Herders ??= new HttpHeaders();
+			return Herders;
 		}
 	}
 
 	internal void EnsureWriteStream(int miniCompressionSize, CompressType? compressType) {
-		if (body == null) {
-			body = new MemoryStream();
-		}
-		else {
-			body.Position = 0;
-		}
+		Body.Position = 0;
+		Body.SetLength(0);
 
 		_miniCompressionSize = miniCompressionSize;
 		_compressType = compressType;
@@ -131,10 +128,8 @@ public class Response : Message {
 
 		_fileRef = null;
 
-		if (body != null) {
-			body.Position = 0;
-		}
-
+		Body.Position = 0;
+		Body.SetLength(0);
 		Headers.Del(HttpRfcHeader.ContentType);
 		AutoCompressWriter();
 	}
@@ -152,15 +147,15 @@ public class Response : Message {
 
 		switch (_compressType) {
 			case CompressType.Brotil:
-				_compressStream = new BrotliStream(body!, CompressionLevel.Optimal, leaveOpen: true);
+				_compressStream = new BrotliStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(HttpRfcHeader.ContentEncoding, "br");
 				break;
 			case CompressType.Deflate:
-				_compressStream = new DeflateStream(body!, CompressionLevel.Optimal, leaveOpen: true);
+				_compressStream = new DeflateStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(HttpRfcHeader.ContentEncoding, "deflate");
 				break;
 			case CompressType.GZip:
-				_compressStream = new GZipStream(body!, CompressionLevel.Optimal, leaveOpen: true);
+				_compressStream = new GZipStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(HttpRfcHeader.ContentEncoding, "gzip");
 				break;
 			default:
@@ -173,14 +168,14 @@ public class Response : Message {
 			_compressStream.Write(buf);
 		}
 		else {
-			body ??= new(buf.Length);
-			body.Write(buf);
+			Body ??= new(buf.Length);
+			Body.Write(buf);
 
-			if (_compressType == null || body.Position < _miniCompressionSize) return;
+			if (_compressType == null || Body.Position < _miniCompressionSize) return;
 
-			var prevData = body.ToArray();
+			var prevData = Body.ToArray();
 
-			body.Position = 0;
+			Body.Position = 0;
 			AutoCompressWriter();
 			_compressStream!.Write(prevData);
 		}
@@ -205,13 +200,13 @@ public class Response : Message {
 	public void Write(StringBuilder sb) => Write(sb.ToString());
 
 	public void WriteJSON(object val, JsonSerializerOptions? options = null) {
-		if (body is { Position: > 0 }) {
+		if (Body is { Position: > 0 }) {
 			ResetBodyTmp();
 		}
 
 		BodyType = BodyType.JSON;
 
-		JsonSerializer.Serialize(_compressStream ?? body!, val, options);
+		JsonSerializer.Serialize(_compressStream ?? Body!, val, options);
 	}
 
 	public void WriteFile(string path, Tuple<long, long>? range = null, bool viaSendFile = false) {

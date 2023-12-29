@@ -7,7 +7,7 @@ using echo.primary.utils;
 
 namespace echo.primary.core.h2tp;
 
-public class Version11Options {
+public class Version1Options {
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
 	public int MaxFirstLineBytesSize { get; set; } = 4096;
 
@@ -26,7 +26,7 @@ public class Version11Options {
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
 	public int HandleTimeout { get; set; } = 0;
 
-	[Toml(Optional = true)] public bool EnableCompression { get; set; } = true;
+	[Toml(Optional = true)] public bool EnableCompression { get; set; } = false;
 
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
 	public int MinCompressionSize { get; set; } = 1024;
@@ -35,10 +35,10 @@ public class Version11Options {
 	public int StreamReadBufferSize { get; set; } = 4096;
 }
 
-public class Version11Protocol(IHandler handler, Version11Options options) : ITcpProtocol {
+public class Version1Protocol(IHandler handler, Version1Options options) : ITcpProtocol {
 	private TcpConnection? _connection;
 
-	public Version11Protocol(IHandler handler) : this(handler, new()) { }
+	public Version1Protocol(IHandler handler) : this(handler, new()) { }
 
 	public void Dispose() {
 		_connection?.Dispose();
@@ -65,26 +65,28 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 	}
 
 	private async Task ServeConn(TcpConnection conn) {
-		var reader = new ExtAsyncReader(conn);
-		var tmp = conn.MemoryStreamPool.Get();
-		tmp.Capacity = options.StreamReadBufferSize;
+		var readerTmp = conn.MemoryStreamThreadLocalPool.Get((v) => v.Capacity = 4096);
+
+		var reader = new ExtAsyncReader(conn, new BytesBuffer(readerTmp));
+
+		var tmp = conn.MemoryStreamThreadLocalPool.Get(v => v.Capacity = options.StreamReadBufferSize);
 
 		var ctx = new RequestCtx {
 			TcpConnection = conn,
-			SocketReadBuffer = tmp,
-			tmp = tmp.GetBuffer(),
+			ReadTmp = tmp,
 			Request = {
-				body = conn.MemoryStreamPool.Get()
+				Body = conn.MemoryStreamThreadLocalPool.Get()
 			},
 			Response = {
-				body = conn.MemoryStreamPool.Get()
+				Body = conn.MemoryStreamThreadLocalPool.Get()
 			}
 		};
 
 		conn.OnClose += () => {
-			conn.MemoryStreamPool.Put(tmp);
-			conn.MemoryStreamPool.Put((ReusableMemoryStream)ctx.Request.body);
-			conn.MemoryStreamPool.Put((ReusableMemoryStream)ctx.Response.body);
+			conn.MemoryStreamThreadLocalPool.Put(readerTmp);
+			conn.MemoryStreamThreadLocalPool.Put(tmp);
+			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Request.Body);
+			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Response.Body);
 		};
 
 		var req = ctx.Request;
@@ -93,11 +95,9 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 		var headersCount = 0;
 
 		var begin = Time.unixmills();
-		var hijacked = false;
+		var stop = false;
 
-		while (conn.IsAlive) {
-			if (hijacked) break;
-
+		while (!stop) {
 			switch (readStatus) {
 				case MessageReadStatus.None: {
 					flBytesSize = 0;
@@ -106,20 +106,20 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.flps[0] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
+					req.Flps[0] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
 					flBytesSize += tmp.Position;
-					readStatus = MessageReadStatus.FL1_OK;
+					readStatus = MessageReadStatus.Fl1Ok;
 					break;
 				}
-				case MessageReadStatus.FL1_OK: {
+				case MessageReadStatus.Fl1Ok: {
 					await reader.ReadUntil(
 						tmp, (byte)' ',
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.flps[1] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
-					if (string.IsNullOrEmpty(req.flps[1])) {
-						req.flps[1] = "/";
+					req.Flps[1] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 1)]);
+					if (string.IsNullOrEmpty(req.Flps[1])) {
+						req.Flps[1] = "/";
 					}
 
 					flBytesSize += tmp.Position;
@@ -127,26 +127,26 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
 					}
 
-					readStatus = MessageReadStatus.FL2_OK;
+					readStatus = MessageReadStatus.Fl2Ok;
 					break;
 				}
-				case MessageReadStatus.FL2_OK: {
+				case MessageReadStatus.Fl2Ok: {
 					await reader.ReadUntil(
 						tmp, (byte)'\n',
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.flps[2] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
+					req.Flps[2] = Encoding.Latin1.GetString(tmp.GetBuffer().AsSpan()[..(int)(tmp.Position - 2)]);
 					flBytesSize += tmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
 						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
 					}
 
-					readStatus = MessageReadStatus.FL3_OK;
+					readStatus = MessageReadStatus.Fl3Ok;
 					headersCount = 0;
 					break;
 				}
-				case MessageReadStatus.FL3_OK: {
+				case MessageReadStatus.Fl3Ok: {
 					while (true) {
 						var line = (
 							await reader.ReadLine(
@@ -157,7 +157,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 							)
 						).Trim();
 						if (line.Length < 1) {
-							readStatus = MessageReadStatus.HEADER_OK;
+							readStatus = MessageReadStatus.HeaderOk;
 							break;
 						}
 
@@ -172,14 +172,14 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 					break;
 				}
-				case MessageReadStatus.HEADER_OK: {
+				case MessageReadStatus.HeaderOk: {
 					var host = req.Headers.GetLast(HttpRfcHeader.Host) ?? "localhost";
 					var protocol = conn.IsOverSsl ? "https" : "http";
-					req._uri = new Uri($"{protocol}://{host}{req.flps[1]}");
+					req._uri = new Uri($"{protocol}://{host}{req.Flps[1]}");
 
 					var cls = req.Headers.GetAll("content-length");
 					if (cls == null) {
-						readStatus = MessageReadStatus.BODY_OK;
+						readStatus = MessageReadStatus.BodyOk;
 						break;
 					}
 
@@ -188,7 +188,7 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 					}
 
 					if (bodySize < 1) {
-						readStatus = MessageReadStatus.BODY_OK;
+						readStatus = MessageReadStatus.BodyOk;
 						break;
 					}
 
@@ -196,8 +196,8 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 						throw new Exception($"bad request, reach {nameof(options.MaxBodyBytesSize)}");
 					}
 
-					req.body.SetLength(0);
-					req.body.Capacity = (int)bodySize;
+					req.Body.SetLength(0);
+					req.Body.Capacity = (int)bodySize;
 
 					while (true) {
 						var rtmp = tmp.GetBuffer();
@@ -207,21 +207,21 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 
 						await reader.ReadExactly(rtmp, timeoutMills: RemainMills(begin));
 
-						req.body.Write(rtmp);
+						req.Body.Write(rtmp);
 						bodySize -= rtmp.Length;
 						if (bodySize >= 1) continue;
 
-						req.body.Position = 0;
-						readStatus = MessageReadStatus.BODY_OK;
+						req.Body.Position = 0;
+						readStatus = MessageReadStatus.BodyOk;
 						break;
 					}
 
 					break;
 				}
-				case MessageReadStatus.BODY_OK: {
+				case MessageReadStatus.BodyOk: {
 					await HandleRequest(ctx);
-					hijacked = ctx.Hijacked;
-					if (!hijacked) {
+					stop = ctx.Hijacked;
+					if (!stop) {
 						if (ctx.ShouldKeepAlive) {
 							ctx.Reset();
 							readStatus = MessageReadStatus.None;
@@ -231,7 +231,9 @@ public class Version11Protocol(IHandler handler, Version11Options options) : ITc
 							continue;
 						}
 
+						await conn.Flush();
 						conn.Close();
+						stop = true;
 					}
 
 					break;

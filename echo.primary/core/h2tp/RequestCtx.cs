@@ -9,7 +9,6 @@ public partial class RequestCtx {
 	internal CancellationToken? CancellationToken = null;
 	internal bool HandleTimeout = false;
 	internal TcpConnection TcpConnection = null!;
-	internal MemoryStream SocketReadBuffer = null!;
 	internal bool Hijacked;
 
 	private readonly StringBuilder _respWriteBuf = new(1024);
@@ -25,14 +24,14 @@ public partial class RequestCtx {
 		_respWriteBuf.Clear();
 	}
 
-	public bool ShouldKeepAlive => false;
+	public bool ShouldKeepAlive => true;
 
 	private async Task SendResponseHeader(IAsyncWriter writer) {
-		var version = string.IsNullOrEmpty(Response.flps[0]) ? "HTTP/1.1" : Response.flps[0];
-		var code = string.IsNullOrEmpty(Response.flps[1]) ? "200" : Response.flps[1];
-		var txt = string.IsNullOrEmpty(Response.flps[2]) ? "OK" : Response.flps[2];
+		var version = string.IsNullOrEmpty(Response.Flps[0]) ? "HTTP/1.1" : Response.Flps[0];
+		var code = string.IsNullOrEmpty(Response.Flps[1]) ? "200" : Response.Flps[1];
+		var txt = string.IsNullOrEmpty(Response.Flps[2]) ? "OK" : Response.Flps[2];
 		_respWriteBuf.Append($"{version} {code} {txt}\r\n");
-		Response.herders?.Each((k, lst) => {
+		Response.Herders?.Each((k, lst) => {
 			foreach (var v in lst) {
 				_respWriteBuf.Append($"{k}: {v}\r\n");
 			}
@@ -70,14 +69,14 @@ public partial class RequestCtx {
 			await Response._compressStream.FlushAsync();
 		}
 
-		if (Response.body is { Length: > 0 }) {
-			Response.Headers.ContentLength = Response.body.Length;
+		if (Response.Body is { Length: > 0 }) {
+			Response.Headers.ContentLength = Response.Body.Length;
 		}
 
 		await SendResponseHeader(writer);
 
-		if (Response.body is { Length: > 0 }) {
-			await writer.Write(Response.body.GetBuffer().AsMemory()[..(int)Response.body.Position]);
+		if (Response.Body is { Length: > 0 }) {
+			await writer.Write(Response.Body.GetBuffer().AsMemory()[..(int)Response.Body.Position]);
 			await writer.Flush();
 		}
 	}
@@ -87,6 +86,6 @@ public partial class RequestCtx {
 	void Hijack(ConnHandleFunc handle) {
 		if (Hijacked) throw new Exception("");
 		Hijacked = true;
-		handle(TcpConnection, SocketReadBuffer);
+		handle(TcpConnection, ReadTmp);
 	}
 }

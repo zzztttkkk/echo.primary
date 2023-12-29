@@ -4,7 +4,7 @@ using echo.primary.core.io;
 namespace echo.primary.core.h2tp;
 
 public partial class RequestCtx {
-	internal byte[] tmp = null!;
+	internal MemoryStream ReadTmp = null!;
 
 	private async Task SendRangeFileRefResponse(IAsyncWriter writer, long filesize) {
 		var fileRef = Response._fileRef!;
@@ -24,8 +24,8 @@ public partial class RequestCtx {
 		fs.Seek(begin, SeekOrigin.Begin);
 
 		var remain = begin - end + 1;
-		if (remain <= tmp.Length) {
-			var buf = tmp.AsMemory();
+		if (remain <= ReadTmp.Length) {
+			var buf = ReadTmp.GetBuffer().AsMemory();
 			var rl = await fs.ReadAsync(buf);
 			if (rl != remain) {
 				throw new Exception("");
@@ -38,8 +38,7 @@ public partial class RequestCtx {
 		await SendSizedChunkedStreamResponse(writer, fs, remain);
 	}
 
-	private async Task SendSmallBytesResponse(IAsyncWriter writer, ReadOnlyMemory<byte> bytes) {
-	}
+	private async Task SendSmallBytesResponse(IAsyncWriter writer, ReadOnlyMemory<byte> bytes) { }
 
 	private async Task SendSizedChunkedStreamResponse(IAsyncWriter writer, Stream stream, long remain) {
 		if (remain < 1) return;
@@ -52,8 +51,8 @@ public partial class RequestCtx {
 		await SendResponseHeader(writer);
 
 		while (true) {
-			var buf = tmp.AsMemory();
-			if (remain < tmp.Length) {
+			var buf = ReadTmp.GetBuffer().AsMemory();
+			if (remain < ReadTmp.Length) {
 				buf = buf[..(int)remain];
 			}
 
@@ -84,7 +83,7 @@ public partial class RequestCtx {
 			return;
 		}
 
-		var buf = tmp.AsMemory();
+		var buf = ReadTmp.GetBuffer().AsMemory();
 
 		while (true) {
 			var rl = await stream.ReadAsync(buf);
@@ -110,11 +109,11 @@ public partial class RequestCtx {
 		await SendResponseHeader(writer);
 
 		var cs = Response._compressStream!;
-		var body = Response.body!;
+		var body = Response.Body!;
 
 		while (true) {
-			var buf = tmp.AsMemory();
-			if (remain < tmp.Length) {
+			var buf = ReadTmp.GetBuffer().AsMemory();
+			if (remain < ReadTmp.Length) {
 				buf = buf[..(int)remain];
 			}
 
@@ -124,7 +123,7 @@ public partial class RequestCtx {
 			}
 
 			await cs.WriteAsync(buf[..rl]);
-			if (body.Position >= tmp.Length) {
+			if (body.Position >= ReadTmp.Length) {
 				await writer.Write(Encoding.ASCII.GetBytes($"{body.Position}\r\n"));
 				await writer.Write(body.GetBuffer().AsMemory()[..rl]);
 				await writer.Write(NewLine);
@@ -152,14 +151,14 @@ public partial class RequestCtx {
 		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
 
 		var cs = Response._compressStream!;
-		var body = Response.body!;
-		var buf = tmp.AsMemory();
+		var body = Response.Body!;
+		var buf = ReadTmp.GetBuffer().AsMemory();
 
 		while (true) {
 			var rl = await stream.ReadAsync(buf);
 
 			await cs.WriteAsync(buf[..rl]);
-			if (body.Position >= tmp.Length) {
+			if (body.Position >= ReadTmp.Length) {
 				await writer.Write(Encoding.ASCII.GetBytes($"{body.Position}\r\n"));
 				await writer.Write(body.GetBuffer().AsMemory()[..rl]);
 				await writer.Write(NewLine);
@@ -200,10 +199,12 @@ public partial class RequestCtx {
 			return;
 		}
 
-		if (filesize <= tmp.Length) {
+		var tmp = ReadTmp.GetBuffer().AsMemory();
+
+		if (filesize <= ReadTmp.Length) {
 			await using var smallFs = fileRef.fileinfo.OpenRead();
 
-			var rbuf = tmp.AsMemory()[..(int)filesize];
+			var rbuf = tmp[..(int)filesize];
 			var rl = await smallFs.ReadAsync(rbuf);
 			if (rl != filesize) {
 				throw new IOException("read failed");

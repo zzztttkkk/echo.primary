@@ -15,10 +15,9 @@ public class TcpServer : IDisposable {
 
 	public string Name { get; } = "TcpServer";
 
-	internal Pool<ReusableMemoryStream> pool = new(() => new ReusableMemoryStream());
+	internal readonly ThreadLocalPool<ReusableMemoryStream> ThreadLocalPool = new(() => new ReusableMemoryStream());
 
-	public TcpServer() : this("TcpServer") {
-	}
+	public TcpServer() : this("TcpServer") { }
 
 	public TcpServer(string name) {
 		Name = name;
@@ -157,8 +156,7 @@ public class TcpServer : IDisposable {
 			_sock.Close();
 			_sock.Dispose();
 		}
-		catch (ObjectDisposedException) {
-		}
+		catch (ObjectDisposedException) { }
 	}
 
 	public void Dispose() {

@@ -5,14 +5,14 @@ public interface IReusable : IDisposable {
 	void Reset();
 }
 
-public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReusable {
+public class ThreadLocalPool<T>(ThreadLocalPool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReusable {
 	public delegate T Constructor();
 
-	public delegate T Prepare(T obj);
+	public delegate void Prepare(T obj);
 
-	private readonly ThreadLocal<LinkedList<T>> _idle = new(() => new LinkedList<T>());
+	private readonly ThreadLocal<List<T>> _idle = new(() => new List<T>());
 
-	private LinkedList<T> List {
+	private List<T> List {
 		get {
 			_idle.Value ??= new();
 			return _idle.Value!;
@@ -20,21 +20,15 @@ public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) wher
 	}
 
 	private T GetObj() {
-		var first = List.First;
-		if (first == null) {
-			return constructor();
-		}
-
-		List.RemoveFirst();
-		return first.Value;
+		if (List.Count < 1) return constructor();
+		var ele = List[^1];
+		List.RemoveAt(List.Count - 1);
+		return ele;
 	}
 
 	public T Get(Prepare? prepare = null) {
 		var obj = GetObj();
-		if (prepare != null) {
-			prepare(obj);
-		}
-
+		prepare?.Invoke(obj);
 		return obj;
 	}
 
@@ -45,7 +39,7 @@ public class Pool<T>(Pool<T>.Constructor constructor, int maxIdleSize = 24) wher
 		}
 
 		obj.Reset();
-		List.AddLast(obj);
+		List.Add(obj);
 	}
 }
 
@@ -54,5 +48,6 @@ public class ReusableMemoryStream(int size = 0) : MemoryStream(size), IReusable 
 
 	public void Reset() {
 		Position = 0;
+		SetLength(0);
 	}
 }

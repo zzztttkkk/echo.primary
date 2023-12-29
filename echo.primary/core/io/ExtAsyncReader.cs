@@ -5,24 +5,23 @@ namespace echo.primary.core.io;
 
 public class ExtAsyncReader(
 	IAsyncReader src,
-	int tmpCap = 4096,
+	BytesBuffer tmp,
 	int tmpReadSize = 512,
 	int srcReadSize = 4096
 ) : IAsyncReader {
-	private readonly BytesBuffer tmp = new(tmpCap);
-	private readonly byte[] tmpReadBuf = new byte[tmpReadSize];
-	private readonly byte[] srcReadBuf = new byte[srcReadSize];
+	private readonly byte[] _tmpReadBuf = new byte[tmpReadSize];
+	private readonly byte[] _srcReadBuf = new byte[srcReadSize];
 
 	private async Task EnsureTmpCanRead(int timeoutMills) {
 		if (tmp.Stream.Position < tmp.Stream.Length) return;
 
-		var rl = await src.Read(srcReadBuf, timeoutMills);
+		var rl = await src.Read(_srcReadBuf, timeoutMills);
 		if (rl < 1) {
 			throw new Exception("empty read from src");
 		}
 
 		tmp.Stream.Position = 0;
-		tmp.Writer.Write(srcReadBuf.AsSpan()[..rl]);
+		tmp.Writer.Write(_srcReadBuf.AsSpan()[..rl]);
 		tmp.Stream.Position = 0;
 	}
 
@@ -41,18 +40,18 @@ public class ExtAsyncReader(
 
 			await EnsureTmpCanRead(remainMills);
 
-			var rl = tmp.Reader.Read(tmpReadBuf);
+			var rl = tmp.Reader.Read(_tmpReadBuf);
 			if (rl < 1) {
 				throw new Exception("empty read from tmp");
 			}
 
-			var idx = ((ReadOnlySpan<byte>)tmpReadBuf.AsSpan(0, rl)).IndexOf(target);
+			var idx = ((ReadOnlySpan<byte>)_tmpReadBuf.AsSpan(0, rl)).IndexOf(target);
 			if (idx < 0) {
 				if (maxBytesSize > 0 && ms.Length + rl > maxBytesSize) {
 					throw new Exception("reach max size");
 				}
 
-				ms.Write(tmpReadBuf.AsSpan()[..rl]);
+				ms.Write(_tmpReadBuf.AsSpan()[..rl]);
 				continue;
 			}
 
@@ -60,7 +59,7 @@ public class ExtAsyncReader(
 				throw new Exception("reach max size");
 			}
 
-			ms.Write(tmpReadBuf.AsSpan()[..(idx + 1)]);
+			ms.Write(_tmpReadBuf.AsSpan()[..(idx + 1)]);
 			tmp.Stream.Seek(idx - rl + 1, SeekOrigin.Current);
 			break;
 		}
