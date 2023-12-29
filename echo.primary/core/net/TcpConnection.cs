@@ -31,7 +31,7 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 	private void EnsureAlive() {
 		if (_closed || _stream == null) {
-			throw new Exception("conn is not alive");
+			throw new SocketException((int)SocketError.Shutdown);
 		}
 	}
 
@@ -230,13 +230,8 @@ public class TcpConnection(TcpServer server, Socket socket)
 			return await _stream!.ReadAsync(buf);
 		}
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			return await _stream!.ReadAsync(buf, cts.Token);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		return await _stream!.ReadAsync(buf, cts.Token);
 	}
 
 	public async Task<int> Read(Memory<byte> buf, int timeoutMills) {
@@ -246,13 +241,8 @@ public class TcpConnection(TcpServer server, Socket socket)
 			return await _stream!.ReadAsync(buf);
 		}
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			return await _stream!.ReadAsync(buf, cts.Token);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		return await _stream!.ReadAsync(buf, cts.Token);
 	}
 
 	public async Task ReadExactly(byte[] buf, int timeoutMills) {
@@ -265,13 +255,8 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 		EnsureAlive();
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			await _stream!.ReadExactlyAsync(buf, cts.Token);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		await _stream!.ReadExactlyAsync(buf, cts.Token);
 	}
 
 	public async Task ReadExactly(Memory<byte> buf, int timeoutMills) {
@@ -284,13 +269,8 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 		EnsureAlive();
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			await _stream!.ReadExactlyAsync(buf, cts.Token);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		await _stream!.ReadExactlyAsync(buf, cts.Token);
 	}
 
 	public async Task<int> ReadAtLeast(byte[] buf, int timeoutMills, int minimumBytes, bool throwWhenEnd) {
@@ -306,18 +286,13 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 		EnsureAlive();
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			return await _stream!.ReadAtLeastAsync(
-				buf,
-				minimumBytes: minimumBytes,
-				throwOnEndOfStream: throwWhenEnd,
-				cancellationToken: cts.Token
-			);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		return await _stream!.ReadAtLeastAsync(
+			buf,
+			minimumBytes: minimumBytes,
+			throwOnEndOfStream: throwWhenEnd,
+			cancellationToken: cts.Token
+		);
 	}
 
 
@@ -335,18 +310,13 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 		EnsureAlive();
 
-		var cts = AutoCancel(timeoutMills);
-		try {
-			return await _stream!.ReadAtLeastAsync(
-				buf,
-				minimumBytes: minimumBytes,
-				throwOnEndOfStream: throwWhenEnd,
-				cancellationToken: cts.Token
-			);
-		}
-		finally {
-			cts.Dispose();
-		}
+		using var cts = AutoCancel(timeoutMills);
+		return await _stream!.ReadAtLeastAsync(
+			buf,
+			minimumBytes: minimumBytes,
+			throwOnEndOfStream: throwWhenEnd,
+			cancellationToken: cts.Token
+		);
 	}
 
 	public async Task<byte> ReadByte(int timeoutMills) {

@@ -18,7 +18,7 @@ public partial class RequestCtx {
 			throw new Exception($"bad file range, end {end} > filesize {filesize}, {fileRef.filename}");
 		}
 
-		Response.Headers.Set(HttpRfcHeader.ContentRange, $"bytes {begin}-{end}/{filesize}");
+		Response.Headers.Set(RfcHeader.ContentRange, $"bytes {begin}-{end}/{filesize}");
 
 		await using var fs = fileRef.fileinfo.OpenRead();
 		fs.Seek(begin, SeekOrigin.Begin);
@@ -47,7 +47,7 @@ public partial class RequestCtx {
 			return;
 		}
 
-		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
+		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 		await SendResponseHeader(writer);
 
 		while (true) {
@@ -76,7 +76,7 @@ public partial class RequestCtx {
 	}
 
 	private async Task SendChunkedStreamResponse(IAsyncWriter writer, Stream stream) {
-		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
+		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 
 		if (Response._compressStream != null) {
 			await _SendChunkedStreamWithCompresion(writer, stream);
@@ -105,7 +105,7 @@ public partial class RequestCtx {
 		Stream stream,
 		long remain
 	) {
-		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
+		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 		await SendResponseHeader(writer);
 
 		var cs = Response._compressStream!;
@@ -148,7 +148,7 @@ public partial class RequestCtx {
 	}
 
 	private async Task _SendChunkedStreamWithCompresion(IAsyncWriter writer, Stream stream) {
-		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
+		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 
 		var cs = Response._compressStream!;
 		var body = Response.Body!;
@@ -187,7 +187,7 @@ public partial class RequestCtx {
 
 		if (fileRef.range == null && fileRef.viaSendFile) {
 			Response.Headers.ContentLength = filesize;
-			Response.Headers.Del(HttpRfcHeader.ContentEncoding);
+			Response.Headers.Del(RfcHeader.ContentEncoding);
 			await SendResponseHeader(writer);
 			await writer.Flush();
 			await writer.SendFile(fileRef.filename);
@@ -214,7 +214,7 @@ public partial class RequestCtx {
 			return;
 		}
 
-		Response.Headers.Set(HttpRfcHeader.TransferEncoding, "chunked");
+		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 		await SendResponseHeader(writer);
 
 		await using var bigFs = fileRef.fileinfo.OpenRead();

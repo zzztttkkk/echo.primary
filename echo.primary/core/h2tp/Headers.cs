@@ -1,6 +1,6 @@
 ﻿namespace echo.primary.core.h2tp;
 
-public class HttpHeaders {
+public class Headers {
 	private Dictionary<string, List<string>>? data;
 
 	public void Clear() {
@@ -16,7 +16,7 @@ public class HttpHeaders {
 		return lst;
 	}
 
-	public List<string>? GetAll(HttpRfcHeader key) => GetAll(HeaderToString.ToString(key), true);
+	public List<string>? GetAll(RfcHeader key) => GetAll(HeaderToString.ToString(key), true);
 
 	public string? GetFirst(string key, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
@@ -24,7 +24,7 @@ public class HttpHeaders {
 		return lst.First();
 	}
 
-	public string? GetFirst(HttpRfcHeader key) => GetFirst(HeaderToString.ToString(key), true);
+	public string? GetFirst(RfcHeader key) => GetFirst(HeaderToString.ToString(key), true);
 
 	public string? GetLast(string key, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
@@ -32,7 +32,7 @@ public class HttpHeaders {
 		return lst.Last();
 	}
 
-	public string? GetLast(HttpRfcHeader key) => GetLast(HeaderToString.ToString(key), true);
+	public string? GetLast(RfcHeader key) => GetLast(HeaderToString.ToString(key), true);
 
 	public void Add(string key, string val, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
@@ -45,20 +45,20 @@ public class HttpHeaders {
 		data[isLowercase ? key : key.ToLower()] = [val];
 	}
 
-	public void Add(HttpRfcHeader key, string val) => Add(HeaderToString.ToString(key), val, true);
+	public void Add(RfcHeader key, string val) => Add(HeaderToString.ToString(key), val, true);
 
 	public void Set(string key, string val, bool isLowercase = false) {
 		data ??= new();
 		data[isLowercase ? key : key.ToLower()] = [val];
 	}
 
-	public void Set(HttpRfcHeader key, string val) => Set(HeaderToString.ToString(key), val, true);
+	public void Set(RfcHeader key, string val) => Set(HeaderToString.ToString(key), val, true);
 
 	public void Del(string key, bool isLowercase = false) {
 		data?.Remove(isLowercase ? key : key.ToLower());
 	}
 
-	public void Del(HttpRfcHeader key) => Del(HeaderToString.ToString(key), true);
+	public void Del(RfcHeader key) => Del(HeaderToString.ToString(key), true);
 
 	public delegate void Visitor(string key, List<string> lst);
 
@@ -71,7 +71,7 @@ public class HttpHeaders {
 
 	public long? ContentLength {
 		get {
-			var txt = GetLast(HttpRfcHeader.ContentLength);
+			var txt = GetLast(RfcHeader.ContentLength);
 			if (string.IsNullOrEmpty(txt)) return null;
 			if (long.TryParse(txt, out var num)) {
 				return num;
@@ -81,17 +81,17 @@ public class HttpHeaders {
 		}
 		set {
 			if (value is null or < 0) {
-				Del(HttpRfcHeader.ContentLength);
+				Del(RfcHeader.ContentLength);
 				return;
 			}
 
-			Set(HttpRfcHeader.ContentLength, value.ToString()!);
+			Set(RfcHeader.ContentLength, value.ToString()!);
 		}
 	}
 
 	public CompressType? AcceptedCompressType {
 		get {
-			var lst = GetAll(HttpRfcHeader.AcceptEncoding);
+			var lst = GetAll(RfcHeader.AcceptEncoding);
 			if (lst == null || lst.Count < 1) {
 				return null;
 			}
@@ -126,14 +126,14 @@ public class HttpHeaders {
 	}
 
 	public string? ContentType {
-		get => GetLast(HttpRfcHeader.ContentType);
+		get => GetLast(RfcHeader.ContentType);
 		set {
 			if (string.IsNullOrEmpty(value)) {
-				Del(HttpRfcHeader.ContentType);
+				Del(RfcHeader.ContentType);
 				return;
 			}
 
-			Set(HttpRfcHeader.ContentType, value);
+			Set(RfcHeader.ContentType, value);
 		}
 	}
 }

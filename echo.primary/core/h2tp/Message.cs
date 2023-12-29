@@ -16,7 +16,7 @@ internal enum MessageReadStatus {
 
 public class Message {
 	internal readonly string[] Flps;
-	internal HttpHeaders? Herders;
+	internal Headers? Herders;
 	internal MemoryStream Body = null!;
 
 	protected Message() {
@@ -45,9 +45,9 @@ public class Request : Message {
 		set => Flps[2] = value;
 	}
 
-	public HttpHeaders Headers {
+	public Headers Headers {
 		get {
-			Herders ??= new HttpHeaders();
+			Herders ??= new Headers();
 			return Herders;
 		}
 	}
@@ -90,18 +90,18 @@ public class Response : Message {
 		get => string.IsNullOrEmpty(Flps[1]) ? 0 : int.Parse(Flps[1]);
 		set {
 			Flps[1] = value.ToString();
-			Flps[2] = StatusToString.ToString((HttpRfcStatusCode)value);
+			Flps[2] = StatusToString.ToString((RfcStatusCode)value);
 		}
 	}
 
 	public string StatusText {
-		get => string.IsNullOrEmpty(Flps[2]) ? StatusToString.ToString((HttpRfcStatusCode)StatusCode) : Flps[2];
+		get => string.IsNullOrEmpty(Flps[2]) ? StatusToString.ToString((RfcStatusCode)StatusCode) : Flps[2];
 		set => Flps[2] = value;
 	}
 
-	public HttpHeaders Headers {
+	public Headers Headers {
 		get {
-			Herders ??= new HttpHeaders();
+			Herders ??= new Headers();
 			return Herders;
 		}
 	}
@@ -130,7 +130,7 @@ public class Response : Message {
 
 		Body.Position = 0;
 		Body.SetLength(0);
-		Headers.Del(HttpRfcHeader.ContentType);
+		Headers.Del(RfcHeader.ContentType);
 		AutoCompressWriter();
 	}
 
@@ -148,15 +148,15 @@ public class Response : Message {
 		switch (_compressType) {
 			case CompressType.Brotil:
 				_compressStream = new BrotliStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
-				Headers.Set(HttpRfcHeader.ContentEncoding, "br");
+				Headers.Set(RfcHeader.ContentEncoding, "br");
 				break;
 			case CompressType.Deflate:
 				_compressStream = new DeflateStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
-				Headers.Set(HttpRfcHeader.ContentEncoding, "deflate");
+				Headers.Set(RfcHeader.ContentEncoding, "deflate");
 				break;
 			case CompressType.GZip:
 				_compressStream = new GZipStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
-				Headers.Set(HttpRfcHeader.ContentEncoding, "gzip");
+				Headers.Set(RfcHeader.ContentEncoding, "gzip");
 				break;
 			default:
 				throw new UnreachableException();

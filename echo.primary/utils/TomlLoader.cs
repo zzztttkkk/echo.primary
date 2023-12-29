@@ -11,7 +11,7 @@ public interface ITomlDeserializer {
 	object Parse(Type targetType, object? src);
 }
 
-public interface ITomlDeserializeable {
+public interface ITomlDeserializable {
 	void FromTomlValueObject(object obj);
 }
 
@@ -104,7 +104,7 @@ public static class TomlLoader {
 	}
 
 	private static object ToClsType(object val, Type type) {
-		if (type.IsAssignableFrom(typeof(ITomlDeserializeable))) {
+		if (type.IsAssignableFrom(typeof(ITomlDeserializable))) {
 			var ins = Activator.CreateInstance(type);
 			if (ins == null) {
 				throw new Exception(
@@ -112,7 +112,7 @@ public static class TomlLoader {
 				);
 			}
 
-			((ITomlDeserializeable)ins).FromTomlValueObject(val);
+			((ITomlDeserializable)ins).FromTomlValueObject(val);
 			return ins;
 		}
 
@@ -139,8 +139,8 @@ public static class TomlLoader {
 	}
 
 	private static void Bind(TomlTable table, object obj) {
-		if (obj.GetType().IsAssignableFrom(typeof(ITomlDeserializeable))) {
-			var tmp = (ITomlDeserializeable)obj;
+		if (obj.GetType().IsAssignableFrom(typeof(ITomlDeserializable))) {
+			var tmp = (ITomlDeserializable)obj;
 			tmp.FromTomlValueObject(table);
 			return;
 		}

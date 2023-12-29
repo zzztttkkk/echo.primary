@@ -12,11 +12,12 @@ using var host = new HostBuilder().Build();
  * openssl pkcs12 -in ./dev.local.pem -inkey ./dev.local-key.pem --export -out ./dev.local.pfx
  * rm ./*.pem
  */
-var opts = new TcpSocketOptions(
-	// SslOptions: new SslOptions("./dev.local.pfx", Password: "123456")
-);
 
-var server = new TcpServer(opts);
+var opts = new ServerOptions();
+
+var server = new TcpServer(opts.TcpSocketOptions);
+server.SocketOptions.ReusableBufferPoolSize = 48;
+
 server.Logger.Name = "TcpServer";
 server.Logger.AddAppender(
 	new ColorfulConsoleAppender(
@@ -33,7 +34,7 @@ var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
 lifetime.ApplicationStarted.Register(() => {
 	server.Start(
-		"0.0.0.0", 8080, () => new Version1Protocol(new HelloWorldHandler())
+		"0.0.0.0", 8080, () => new Version1Protocol(new HelloWorldHandler(), opts)
 	).ContinueWith(
 		t => {
 			if (t.Exception == null) return;

@@ -19,7 +19,8 @@ public class TcpServer(TcpSocketOptions socketOptions) : IDisposable {
 		() => new ReusableMemoryStream(
 			socketOptions.ReusableBufferInitCap,
 			socketOptions.ReusableBufferMaxCap
-		)
+		),
+		maxIdleSize: socketOptions.ReusableBufferPoolSize
 	);
 
 	private readonly List<Action> _beforeTcpServerListenHandlers = new();
@@ -146,7 +147,8 @@ public class TcpServer(TcpSocketOptions socketOptions) : IDisposable {
 			_sock.Close();
 			_sock.Dispose();
 		}
-		catch (ObjectDisposedException) { }
+		catch (ObjectDisposedException) {
+		}
 	}
 
 	public void Dispose() {

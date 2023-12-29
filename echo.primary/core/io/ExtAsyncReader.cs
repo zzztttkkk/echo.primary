@@ -13,7 +13,7 @@ public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
 
 		var rl = await src.Read(_srcReadBuf, timeoutMills);
 		if (rl < 1) {
-			throw new Exception("empty read from src");
+			throw new EndOfStreamException();
 		}
 
 		tmp.Stream.Position = 0;
@@ -30,7 +30,7 @@ public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
 			if (timeoutMills > 0) {
 				remainMills = timeoutMills - (int)(Time.unixmills() - begin);
 				if (remainMills < 0) {
-					throw new Exception("read timeout");
+					throw new IOException("read timeout");
 				}
 			}
 
@@ -38,13 +38,13 @@ public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
 
 			var rl = tmp.Reader.Read(_tmpReadBuf);
 			if (rl < 1) {
-				throw new Exception("empty read from tmp");
+				throw new EndOfStreamException();
 			}
 
 			var idx = ((ReadOnlySpan<byte>)_tmpReadBuf.AsSpan(0, rl)).IndexOf(target);
 			if (idx < 0) {
 				if (maxBytesSize > 0 && ms.Length + rl > maxBytesSize) {
-					throw new Exception("reach max size");
+					throw new IOException("reach max size");
 				}
 
 				ms.Write(_tmpReadBuf.AsSpan()[..rl]);
@@ -52,7 +52,7 @@ public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
 			}
 
 			if (maxBytesSize > 0 && ms.Length + idx + 1 > maxBytesSize) {
-				throw new Exception("reach max size");
+				throw new IOException("reach max size");
 			}
 
 			ms.Write(_tmpReadBuf.AsSpan()[..(idx + 1)]);
