@@ -25,23 +25,21 @@ public static class TomlParsers {
 	}
 
 	public class ByteSizeParser : ITomlDeserializer {
-		public object Parse(Type targetType, object src) {
+		public object Parse(Type targetType, object? src) {
 			if (!Reflection.IsIntType(targetType)) {
 				throw new Exception("the prop is not an int");
 			}
 
-			var items = new List<UnitItem>();
+			if (src == null) return 0;
 
-			switch (src) {
-				case TomlTable table: {
-					break;
-				}
-				case string txt: {
-					items = Items(txt);
-					break;
-				}
+			if (Reflection.IsIntType(src.GetType())) {
+				return Reflection.ObjectToInt(src, targetType);
 			}
 
+			var items = src switch {
+				string txt => Items(txt),
+				_ => throw new Exception("expected a string or a int number")
+			};
 
 			ulong bv = 0;
 			foreach (var item in items) {
@@ -77,8 +75,8 @@ public static class TomlParsers {
 		}
 	}
 
-	public class TimeDurationParser : ITomlDeserializer {
-		public object Parse(Type targetType, object src) {
+	public class DurationParser : ITomlDeserializer {
+		public object Parse(Type targetType, object? src) {
 			if (!Reflection.IsIntType(targetType) && targetType != typeof(TimeSpan)) {
 				throw new Exception("the prop is not an int");
 			}
@@ -152,7 +150,7 @@ public static class TomlParsers {
 			}
 		}
 
-		public object Parse(Type targetType, object src) {
+		public object Parse(Type targetType, object? src) {
 			if (targetType != typeof(Color)) {
 				throw new Exception("the prop is not a color");
 			}

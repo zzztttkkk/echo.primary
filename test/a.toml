@@ -1,3 +1,18 @@
 ﻿color = "red"
-sizeA = "4M5K4b"
+size-a = "4M5K4b"
 max-alive-duration = "5d1h5s4ms"
+
+[[points]]
+x = 34
+y = 35
+name = "ss"
+
+[[points]]
+x = 34
+y = 35
+name = "ss"
+
+[[points]]
+x = 34
+y = 35
+name = "ss"

@@ -7,8 +7,11 @@ namespace echo.primary.core.net;
 
 public class SslOptions {
 	public string Filename { get; set; }
-	public string? Password { get; set; } = null;
+
+	[Toml(Optional = true)] public string? Password { get; set; } = null;
 	public SslProtocols Protocols { get; set; } = SslProtocols.None;
+
+	[Toml(Ingored = true)]
 	public RemoteCertificateValidationCallback? RemoteCertificateValidationCallback { get; set; } = null;
 
 	public bool ClientCertificateRequired { get; set; } = false;
@@ -23,16 +26,15 @@ public class SslOptions {
 }
 
 public class TcpSocketOptions {
-	public bool ReuseAddress { get; set; } = false;
-	public bool ExclusiveAddressUse { get; set; } = false;
-	public bool DualMode { get; set; } = false;
-	public int Backlog { get; set; } = 128;
-	public bool KeepAlive { get; set; } = false;
-	public int KeepAliveTime { get; set; } = 0;
-	public int KeepAliveInterval { get; set; } = 0;
-	public int KeepAliveRetryCount { get; set; } = 0;
-	public bool NoDelay { get; set; } = false;
-	public uint BufferSize { get; set; } = 8192;
-
-	public SslOptions? SslOptions { get; set; } = null;
+	[Toml(Optional = true)] public bool ReuseAddress { get; set; } = false;
+	[Toml(Optional = true)] public bool ExclusiveAddressUse { get; set; } = false;
+	[Toml(Optional = true)] public bool DualMode { get; set; } = false;
+	[Toml(Optional = true)] public int Backlog { get; set; } = 128;
+	[Toml(Optional = true)] public bool KeepAlive { get; set; } = false;
+	[Toml(Optional = true)] public int KeepAliveTime { get; set; } = 0;
+	[Toml(Optional = true)] public int KeepAliveInterval { get; set; } = 0;
+	[Toml(Optional = true)] public int KeepAliveRetryCount { get; set; } = 0;
+	[Toml(Optional = true)] public bool NoDelay { get; set; } = false;
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))] public uint BufferSize { get; set; } = 8192;
+	[Toml(Optional = true)] public SslOptions? SslOptions { get; set; } = null;
 }

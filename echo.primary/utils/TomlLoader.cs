@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Text.Json;
@@ -9,13 +8,17 @@ using Tomlyn.Model;
 namespace echo.primary.utils;
 
 public interface ITomlDeserializer {
-	object Parse(Type targetType, object src);
-};
+	object Parse(Type targetType, object? src);
+}
+
+public interface ITomlDeserializeable {
+	void FromTomlValueObject(object obj);
+}
 
 [AttributeUsage(AttributeTargets.Property)]
 public class Toml : Attribute {
 	public string Name = "";
-	public List<string>? Aliases = null;
+	public object? Aliases = null;
 	public bool Ingored = false;
 	public bool Optional = false;
 	public string Description = "";
@@ -41,11 +44,13 @@ internal static class TomlValueHelper {
 		JsonNamingPolicy.SnakeCaseUpper
 	];
 
-	internal static object? Get(TomlTable table, string key, List<string>? alias = null) {
+	internal static object? Get(TomlTable table, string key, List<string>? aliases = null) {
 		var names = new List<string> { key, key.ToUpper(), key.ToLower() };
 		names.AddRange(AllNamingPolicy.Select(policy => policy.ConvertName(key)));
-		if (alias != null) {
-			names.AddRange(alias);
+		if (aliases != null) {
+			foreach (var alias in aliases) {
+				names.AddRange(AllNamingPolicy.Select(policy => policy.ConvertName(alias)));
+			}
 		}
 
 		foreach (var name in names) {
@@ -65,24 +70,57 @@ public static class TomlLoader {
 		}.Contains(t);
 	}
 
-	private static object ToSimpleType(object? val, Type type) {
-		if (val == null) throw new Exception("null value");
-
+	private static object ToSimpleType(object val, Type type) {
 		if (Reflection.IsIntType(type)) {
 			try {
+				return Reflection.ObjectToInt(val, type);
 			}
-			catch (Exception e) {
-				Console.WriteLine(e);
-				throw;
+			catch (Exception) {
+				switch (val) {
+					case string txt: {
+						try {
+							return Reflection.StringToInt(txt, type, frombase: 10);
+						}
+						catch (Exception) {
+							return Reflection.StringToInt(txt, type, frombase: 16);
+						}
+					}
+					default: {
+						throw;
+					}
+				}
 			}
 		}
 
 		return val;
 	}
 
-	private static object ToClsType(object? val, Type type) {
-		if (val == null || val.GetType() != typeof(TomlTable)) {
-			throw new Exception("bad value");
+	public delegate object ParseFunc(object val);
+
+	private static readonly Dictionary<Type, ParseFunc> ParseFuncs = new();
+
+	public static void Register(Type type, ParseFunc func) {
+		ParseFuncs[type] = func;
+	}
+
+	private static object ToClsType(object val, Type type) {
+		if (type.IsAssignableFrom(typeof(ITomlDeserializeable))) {
+			var ins = Activator.CreateInstance(type);
+			if (ins == null) {
+				throw new Exception(
+					$"failed create instance for {type.FullName} via {nameof(Activator)}.{nameof(Activator.CreateInstance)}"
+				);
+			}
+
+			((ITomlDeserializeable)ins).FromTomlValueObject(val);
+			return ins;
+		}
+
+		ParseFuncs.TryGetValue(type, out var parse);
+		if (parse != null) return parse(val);
+
+		if (val.GetType() != typeof(TomlTable)) {
+			throw new Exception("bad toml value type, expected a toml table");
 		}
 
 		var obj = Activator.CreateInstance(type);
@@ -101,8 +139,17 @@ public static class TomlLoader {
 	}
 
 	private static void Bind(TomlTable table, object obj) {
+		if (obj.GetType().IsAssignableFrom(typeof(ITomlDeserializeable))) {
+			var tmp = (ITomlDeserializeable)obj;
+			tmp.FromTomlValueObject(table);
+			return;
+		}
+
+
 		foreach (var property in obj.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
+
+			Console.WriteLine(Nullable.GetUnderlyingType(property.PropertyType));
 
 			var attr = property.GetCustomAttributes<Toml>(true).FirstOrDefault(new Toml());
 			if (attr.Ingored) continue;
@@ -110,7 +157,27 @@ public static class TomlLoader {
 				attr.Name = property.Name;
 			}
 
-			var pv = TomlValueHelper.Get(table, attr.Name, attr.Aliases);
+			List<string>? aliases = null;
+			if (attr.Aliases != null) {
+				switch (attr.Aliases) {
+					case string[] sa: {
+						aliases = new List<string>();
+						aliases.AddRange(sa);
+						break;
+					}
+					default: {
+						throw new Exception("aliases expect a string array");
+					}
+				}
+			}
+
+			var pv = TomlValueHelper.Get(table, attr.Name, aliases);
+
+			if (attr.ParserType != null) {
+				property.SetValue(obj, attr.Parser.Parse(property.PropertyType, pv));
+				continue;
+			}
+
 			if (pv == null) {
 				if (attr.Optional) {
 					continue;
@@ -119,10 +186,6 @@ public static class TomlLoader {
 				throw new Exception($"missing required property: {property.Name}");
 			}
 
-			if (attr.ParserType != null) {
-				property.SetValue(obj, attr.Parser.Parse(property.PropertyType, pv));
-				continue;
-			}
 
 			var type = GetRealType(property.PropertyType);
 			if (IsSimpleType(type)) {
@@ -131,18 +194,25 @@ public static class TomlLoader {
 			else {
 				switch (type.IsGenericType) {
 					case true when type.GetGenericTypeDefinition() == typeof(List<>): {
-						var nullabne = Nullable.GetUnderlyingType(type.GetGenericArguments()[0]) != null;
+						var nullable = Nullable.GetUnderlyingType(type.GetGenericArguments()[0]) != null;
 						var eleType = GetRealType(type.GetGenericArguments()[0]);
 						var lst = Activator.CreateInstance(type)!;
 
 						switch (pv) {
 							case TomlArray ary: {
 								foreach (
-									var val in ary.Select(
-										ele => IsSimpleType(eleType)
-											? ToSimpleType(ele, eleType)
-											: ToClsType(ele, eleType)
-									)
+									var val in ary
+										.Where(v => {
+											if (v != null) return true;
+											if (!nullable) throw new Exception("null");
+											type.GetMethod("Add")!.Invoke(lst, [null]);
+											return false;
+										})
+										.Select(
+											ele => IsSimpleType(eleType)
+												? ToSimpleType(ele!, eleType)
+												: ToClsType(ele!, eleType)
+										)
 								) {
 									type.GetMethod("Add")!.Invoke(lst, [val]);
 								}
@@ -151,11 +221,12 @@ public static class TomlLoader {
 							}
 							case TomlTableArray ary: {
 								foreach (
-									var val in ary.Select(
-										ele => IsSimpleType(eleType)
-											? ToSimpleType(ele, eleType)
-											: ToClsType(ele, eleType)
-									)
+									var val in ary
+										.Select(
+											ele => IsSimpleType(eleType)
+												? ToSimpleType(ele, eleType)
+												: ToClsType(ele, eleType)
+										)
 								) {
 									type.GetMethod("Add")!.Invoke(lst, [val]);
 								}
@@ -167,6 +238,7 @@ public static class TomlLoader {
 							}
 						}
 
+						property.SetValue(obj, lst);
 						continue;
 					}
 					case true when type.GetGenericTypeDefinition() == typeof(Dictionary<,>): {
@@ -191,6 +263,7 @@ public static class TomlLoader {
 							eleType.GetMethod("Add")!.Invoke(dict, [key, ele]);
 						}
 
+						property.SetValue(obj, dict);
 						continue;
 					}
 				}

@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml;
 
 namespace echo.primary.utils;
 
@@ -23,7 +24,7 @@ public static class JSON {
 
 	private static JsonSerializerOptions opts {
 		get {
-			var _opts = new JsonSerializerOptions();
+			var _opts = new JsonSerializerOptions { WriteIndented = true };
 			foreach (var converter in Converters) {
 				_opts.Converters.Add(converter);
 			}

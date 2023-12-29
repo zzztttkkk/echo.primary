@@ -1,0 +1,5 @@
+﻿[tcp]
+buffer-size = "16kb"
+
+[ver11]
+max-first-line-bytes-size = "8kb"
