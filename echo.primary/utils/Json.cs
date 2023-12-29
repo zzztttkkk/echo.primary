@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml;
 
 namespace echo.primary.utils;
 
@@ -15,29 +14,29 @@ class ColorConverter : JsonConverter<Color> {
 	}
 }
 
-public static class JSON {
+public static class Json {
 	private static readonly List<JsonConverter> Converters = [new ColorConverter()];
 
 	public static void AddCustomConverter(JsonConverter converter) {
 		Converters.Add(converter);
 	}
 
-	private static JsonSerializerOptions opts {
+	private static JsonSerializerOptions Opts {
 		get {
-			var _opts = new JsonSerializerOptions { WriteIndented = true };
+			var opts = new JsonSerializerOptions { WriteIndented = true };
 			foreach (var converter in Converters) {
-				_opts.Converters.Add(converter);
+				opts.Converters.Add(converter);
 			}
 
-			return _opts;
+			return opts;
 		}
 	}
 
-	public static string Stringify(object val) => JsonSerializer.Serialize(val, opts);
+	public static string Stringify(object val) => JsonSerializer.Serialize(val, Opts);
 
-	public static void Stringify(Stream dst, object val) => JsonSerializer.Serialize(dst, val, opts);
+	public static void Stringify(Stream dst, object val) => JsonSerializer.Serialize(dst, val, Opts);
 
-	public static T? Parse<T>(string val) => JsonSerializer.Deserialize<T>(val, opts);
+	public static T? Parse<T>(string val) => JsonSerializer.Deserialize<T>(val, Opts);
 
-	public static T? Parse<T>(Stream val) => JsonSerializer.Deserialize<T>(val, opts);
+	public static T? Parse<T>(Stream val) => JsonSerializer.Deserialize<T>(val, Opts);
 }

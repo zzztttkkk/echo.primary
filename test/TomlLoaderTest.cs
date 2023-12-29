@@ -11,11 +11,14 @@ class Point {
 }
 
 class Foo {
-	[Toml(ParserType = typeof(TomlParsers.ColorParser))] public Color Color { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.ColorParser))]
+	public Color Color { get; set; }
 
-	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))] public int SizeA { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))]
+	public int SizeA { get; set; }
 
-	[Toml(ParserType = typeof(TomlParsers.DurationParser))] public TimeSpan MaxAliveDuration { get; set; }
+	[Toml(ParserType = typeof(TomlParsers.DurationParser))]
+	public TimeSpan MaxAliveDuration { get; set; }
 
 	public List<Point> Points { get; set; }
 }
@@ -23,22 +26,22 @@ class Foo {
 public class TomlLoaderTest {
 	[Test]
 	public void TestBind() {
-		var obj = TomlLoader.Load<Foo>($"{EchoPrimaryProject.ProjectRoot()}/test/a.toml");
-		Console.WriteLine(JSON.Stringify(obj));
+		var obj = TomlLoader.Load<Foo>($"{ThisProject.TestPath}/a.toml");
+		Console.WriteLine(Json.Stringify(obj));
 	}
 
 	[Test]
 	public void TestLoad() {
-		var opts = TomlLoader.Load<ServerOptions>($"{EchoPrimaryProject.ProjectRoot()}/test/c.toml");
-		Console.WriteLine(JSON.Stringify(opts));
+		var opts = TomlLoader.Load<ServerOptions>($"{ThisProject.TestPath}/c.toml");
+		Console.WriteLine(Json.Stringify(opts));
 	}
 
 	[Test]
 	public void TestMerge() {
 		var result = TomlLoader.Merge(
 			[
-				TomlLoader.ParseFile($"{EchoPrimaryProject.ProjectRoot()}/test/a.toml"),
-				TomlLoader.ParseFile($"{EchoPrimaryProject.ProjectRoot()}/test/b.toml")
+				TomlLoader.ParseFile($"{ThisProject.TestPath}/a.toml"),
+				TomlLoader.ParseFile($"{ThisProject.TestPath}/b.toml")
 			]
 		);
 
@@ -49,9 +52,9 @@ public class TomlLoaderTest {
 
 
 	[Test]
-	public void TestDefered() {
-		using (new Defered(() => Console.WriteLine("1"))) {
-			using (new Defered(() => Console.WriteLine("2"))) {
+	public void TestDefer() {
+		using (new Defer(() => Console.WriteLine("1"))) {
+			using (new Defer(() => Console.WriteLine("2"))) {
 				Console.WriteLine("3");
 			}
 		}
