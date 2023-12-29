@@ -282,13 +282,17 @@ public class Version1Protocol(IHandler handler, Version1Options options) : ITcpP
 	}
 
 	public void ConnectionLost(Exception? exception) {
+		exception = ExceptionHelper.UnwrapFirst(exception);
 		if (exception == null) return;
 
-		var et = exception.GetType();
-		if (et == typeof(SocketException) || et == typeof(IOException)) {
-			return;
+		switch (exception) {
+			case IOException: {
+				return;
+			}
+			default: {
+				Console.WriteLine($"Connection Lost, {exception}");
+				break;
+			}
 		}
-
-		Console.WriteLine($"Connection Lost, {exception}");
 	}
 }

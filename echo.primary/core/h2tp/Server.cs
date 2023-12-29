@@ -11,4 +11,4 @@ public class ServerOptions {
 	public Version1Options Version1Options { get; set; } = new();
 }
 
-public class Server : TcpServer { }
+public class Server(ServerOptions options) : TcpServer(options.TcpSocketOptions) { }
