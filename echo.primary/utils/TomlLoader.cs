@@ -92,7 +92,45 @@ public static class TomlLoader {
 			}
 		}
 
-		return val;
+		if (Reflection.IsFloatType(type)) {
+			switch (val) {
+				case string t: {
+					return Reflection.StringToFloat(t, type);
+				}
+				default: {
+					var dv = Convert.ToDouble(val);
+					return type == typeof(double) ? dv : (float)dv;
+				}
+			}
+		}
+
+		if (type == typeof(bool)) {
+			switch (val) {
+				case bool v: {
+					return v;
+				}
+				case string t: {
+					return bool.Parse(t);
+				}
+				default: {
+					if (Reflection.IsIntType(val.GetType())) {
+						return (long)Reflection.ObjectToInt(val, typeof(long)) != 0;
+					}
+
+					throw new Exception("bad toml value type, expected a bool");
+				}
+			}
+		}
+
+
+		if (type == typeof(string)) {
+			return val switch {
+				string t => t,
+				_ => throw new Exception("bad toml value type, expect a string")
+			};
+		}
+
+		throw new UnreachableException();
 	}
 
 	public delegate object ParseFunc(object val);
@@ -149,13 +187,10 @@ public static class TomlLoader {
 		foreach (var property in obj.GetType().GetProperties()) {
 			if (!property.CanWrite) continue;
 
-			Console.WriteLine(Nullable.GetUnderlyingType(property.PropertyType));
-
 			var attr = property.GetCustomAttributes<Toml>(true).FirstOrDefault(new Toml());
 			if (attr.Ingored) continue;
-			if (string.IsNullOrEmpty(attr.Name)) {
-				attr.Name = property.Name;
-			}
+
+			if (string.IsNullOrEmpty(attr.Name)) attr.Name = property.Name;
 
 			List<string>? aliases = null;
 			if (attr.Aliases != null) {
@@ -172,12 +207,6 @@ public static class TomlLoader {
 			}
 
 			var pv = TomlValueHelper.Get(table, attr.Name, aliases);
-
-			if (attr.ParserType != null) {
-				property.SetValue(obj, attr.Parser.Parse(property.PropertyType, pv));
-				continue;
-			}
-
 			if (pv == null) {
 				if (attr.Optional) {
 					continue;
@@ -186,6 +215,10 @@ public static class TomlLoader {
 				throw new Exception($"missing required property: {property.Name}");
 			}
 
+			if (attr.ParserType != null) {
+				property.SetValue(obj, attr.Parser.Parse(property.PropertyType, pv));
+				continue;
+			}
 
 			var type = GetRealType(property.PropertyType);
 			if (IsSimpleType(type)) {

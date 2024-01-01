@@ -4,35 +4,23 @@ using echo.primary.utils;
 namespace echo.primary.core.h2tp;
 
 public class ServerOptions {
+	[Toml(Optional = true)] public string Host { get; set; } = "127.0.0.1";
+
+	[Toml(Optional = true)] public ushort Port { get; set; } = 8080;
+
 	[Toml(Optional = true, Aliases = new[] { "tcp" })]
 	public TcpSocketOptions TcpSocketOptions { get; set; } = new();
 
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MaxFirstLineBytesSize { get; set; } = 4096;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MaxHeaderLineBytesSize { get; set; } = 4096;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MaxHeadersCount { get; set; } = 1024;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MaxBodyBytesSize { get; set; } = 1024 * 1024;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
-	public int ReadTimeout { get; set; } = 10_000;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
-	public int HandleTimeout { get; set; } = 0;
-
-	[Toml(Optional = true)] public bool EnableCompression { get; set; } = false;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MinCompressionSize { get; set; } = 1024;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int StreamReadBufferSize { get; set; } = 4096;
+	[Toml(Optional = true, Aliases = new[] { "http" })]
+	public HttpOptions HttpOptions { get; set; } = new();
 }
 
 public class HttpServer(ServerOptions options) : TcpServer(options.TcpSocketOptions) {
+	public Task Start(IHandler handler) {
+		return base.Start(
+			options.Host,
+			options.Port,
+			() => new Version1Protocol(handler, options.HttpOptions)
+		);
+	}
 }

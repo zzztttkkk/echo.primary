@@ -1,7 +1,7 @@
 ﻿namespace echo.primary.logging;
 
 public class Logger {
-	private readonly List<IAppender> _appenders = new();
+	private List<IAppender> _appenders = new();
 
 	public string Name { get; set; } = "";
 
@@ -34,6 +34,11 @@ public class Logger {
 		return this;
 	}
 
+	public Logger DelAppender(string name) {
+		_appenders = _appenders.Where(v => v.Name != name).ToList();
+		return this;
+	}
+
 	public void TRACE(string msg, List<object>? args = null) => Emit(
 		new LogItem(Level.TRACE, msg, DateTime.Now, args)
 	);
@@ -63,6 +68,10 @@ public class Logger {
 	);
 
 	public void Error(string msg, List<object>? args = null) => ERROR(msg, args);
+
+	public void Error(Exception exception) {
+		Console.WriteLine(exception);
+	}
 
 	public void FATAL(string msg, List<object>? args = null) => Emit(
 		new LogItem(Level.FATAL, msg, DateTime.Now, args)
