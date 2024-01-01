@@ -1,8 +1,7 @@
 ﻿namespace echo.primary.logging;
 
-public class Logger(string name) {
+public class Logger(string name = "Logger") {
 	private List<IAppender> _appenders = new();
-
 	public string Name { get; set; } = name;
 
 	private void Emit(LogItem log) {
