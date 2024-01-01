@@ -15,7 +15,7 @@ public class ServerOptions {
 	public HttpOptions HttpOptions { get; set; } = new();
 }
 
-public class HttpServer(ServerOptions options) : TcpServer(options.TcpSocketOptions) {
+public class HttpServer(ServerOptions options, string name = "HttpServer") : TcpServer(options.TcpSocketOptions, name) {
 	public Task Start(IHandler handler) {
 		return base.Start(
 			options.Host,

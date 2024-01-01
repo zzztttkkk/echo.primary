@@ -5,7 +5,8 @@ public interface IReusable : IDisposable {
 	void Reset();
 }
 
-public class ThreadLocalPool<T>(ThreadLocalPool<T>.Constructor constructor, int maxIdleSize = 24) where T : IReusable {
+public class ThreadLocalPool<T>(ThreadLocalPool<T>.Constructor constructor, int maxIdleSize = 24)
+	: IDisposable where T : IReusable {
 	public delegate T Constructor();
 
 	public delegate void Prepare(T obj);
@@ -40,6 +41,11 @@ public class ThreadLocalPool<T>(ThreadLocalPool<T>.Constructor constructor, int 
 
 		obj.Reset();
 		List.Add(obj);
+	}
+
+	public void Dispose() {
+		_idle.Dispose();
+		GC.SuppressFinalize(this);
 	}
 }
 

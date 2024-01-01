@@ -16,7 +16,6 @@ using var host = new HostBuilder().Build();
 var opts = TomlLoader.Load<ServerOptions>("./c.toml");
 var server = new HttpServer(opts);
 
-server.Logger.Name = "HttpServer";
 server.Logger.AddAppender(
 	new ColorfulConsoleAppender(
 		"Console",
@@ -30,11 +29,7 @@ server.Logger.AddAppender(
 
 var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-lifetime.ApplicationStarted.Register(() => {
-	_ = server.Start(new HelloWorldHandler()).ContinueWith(t => {
-		if (t.Exception == null) return;
-	});
-});
+lifetime.ApplicationStarted.Register(() => { _ = server.Start(new HelloWorldHandler()); });
 
 lifetime.ApplicationStopping.Register(() => { server.Stop(); });
 

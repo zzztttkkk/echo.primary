@@ -9,13 +9,14 @@ using System.Net.Sockets;
 
 public delegate ITcpProtocol TcpProtocolConstructor();
 
-public class TcpServer(TcpSocketOptions socketOptions) : IDisposable {
+public class TcpServer(TcpSocketOptions socketOptions, string name = "TcpServer") : IDisposable {
 	public TcpSocketOptions SocketOptions => socketOptions;
-	public Logger Logger { get; set; } = new();
 
-	public string Name { get; set; } = "TcpServer";
+	public string Name { get; set; } = name;
 
-	internal readonly ThreadLocalPool<ReusableMemoryStream> ThreadLocalPool = new(
+	public Logger Logger { get; set; } = new(name);
+
+	internal readonly ThreadLocalPool<ReusableMemoryStream> MemoryStreamPool = new(
 		() => new ReusableMemoryStream(
 			socketOptions.ReusableBufferInitCap,
 			socketOptions.ReusableBufferMaxCap
@@ -141,14 +142,23 @@ public class TcpServer(TcpSocketOptions socketOptions) : IDisposable {
 		}
 
 		Logger.Flush();
+		Logger.Close();
 
 		try {
-			Logger.Close();
 			_sock.Close();
+		}
+		catch {
+			// ignored
+		}
+
+		try {
 			_sock.Dispose();
 		}
-		catch (ObjectDisposedException) {
+		catch {
+			// ignored
 		}
+
+		MemoryStreamPool.Dispose();
 	}
 
 	public void Dispose() {

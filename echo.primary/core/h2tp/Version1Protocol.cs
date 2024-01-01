@@ -61,16 +61,16 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 		var reader = new ExtAsyncReader(
 			conn,
 			new BytesBuffer(
-				conn.MemoryStreamThreadLocalPool.Get(
+				conn.MemoryStreamMemoryStreamPool.Get(
 					v => {
 						v.Capacity = 4096;
-						conn.OnClose += () => conn.MemoryStreamThreadLocalPool.Put(v);
+						conn.OnClose += () => conn.MemoryStreamMemoryStreamPool.Put(v);
 					}
 				)
 			)
 		);
 
-		var readTmp = conn.MemoryStreamThreadLocalPool.Get(
+		var readTmp = conn.MemoryStreamMemoryStreamPool.Get(
 			v => v.Capacity = options.StreamReadBufferSize
 		);
 
@@ -78,17 +78,17 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 			TcpConnection = conn,
 			ReadTmp = readTmp,
 			Request = {
-				Body = conn.MemoryStreamThreadLocalPool.Get()
+				Body = conn.MemoryStreamMemoryStreamPool.Get()
 			},
 			Response = {
-				Body = conn.MemoryStreamThreadLocalPool.Get()
+				Body = conn.MemoryStreamMemoryStreamPool.Get()
 			}
 		};
 
 		conn.OnClose += () => {
-			conn.MemoryStreamThreadLocalPool.Put(readTmp);
-			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Request.Body);
-			conn.MemoryStreamThreadLocalPool.Put((ReusableMemoryStream)ctx.Response.Body);
+			conn.MemoryStreamMemoryStreamPool.Put(readTmp);
+			conn.MemoryStreamMemoryStreamPool.Put((ReusableMemoryStream)ctx.Request.Body);
+			conn.MemoryStreamMemoryStreamPool.Put((ReusableMemoryStream)ctx.Response.Body);
 		};
 
 		var req = ctx.Request;

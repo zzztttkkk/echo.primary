@@ -1,9 +1,9 @@
 ﻿namespace echo.primary.logging;
 
-public class Logger {
+public class Logger(string name) {
 	private List<IAppender> _appenders = new();
 
-	public string Name { get; set; } = "";
+	public string Name { get; set; } = name;
 
 	private void Emit(LogItem log) {
 		foreach (var appender in _appenders.Where(e => log.level >= e.Level)) {
