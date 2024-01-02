@@ -23,6 +23,9 @@ public class Message {
 		Flps = new string[3];
 	}
 
+	public ReadOnlyMemory<byte> BodyBuffer => Body.GetBuffer().AsMemory()[..(int)Body.Position];
+	public ReadOnlySpan<byte> BodyBufferSpan => Body.GetBuffer().AsSpan()[..(int)Body.Position];
+
 	internal void Reset() {
 		Herders?.Clear();
 		Body.Position = 0;
@@ -30,61 +33,29 @@ public class Message {
 	}
 }
 
-public class Request : Message {
-	internal Uri? _uri;
-
-	public string Method {
-		get => Flps[0];
-		set => Flps[0] = value;
-	}
-
-	public Uri Uri => _uri!;
-
-	public string Version {
-		get => Flps[2];
-		set => Flps[2] = value;
-	}
-
-	public Headers Headers {
-		get {
-			Herders ??= new Headers();
-			return Herders;
-		}
-	}
-
-	internal new void Reset() {
-		base.Reset();
-	}
-}
-
 internal class FileRef(string filename, Tuple<long, long>? range = null, bool viaSendFile = false) {
-	public string filename = filename;
-	public readonly FileInfo fileinfo = new(filename);
-	public Tuple<long, long>? range = range;
-	public bool viaSendFile = viaSendFile;
+	public readonly string Filename = filename;
+	public readonly FileInfo FileInfo = new(filename);
+	public readonly Tuple<long, long>? Range = range;
+	public readonly bool ViaSendFile = viaSendFile;
 }
 
 public enum BodyType {
 	None,
 	PlainText,
 	Binary,
-	JSON,
+	Json,
 	File,
 	Stream,
 }
 
-public interface ISerializer {
-	string? ContentType { get; }
-	void Serialize(Stream stream, object val);
-}
-
 public class Response : Message {
-	internal FileRef? _fileRef;
-	internal Stream? _compressStream;
-	private CompressType? _compressType;
-	private int _miniCompressionSize;
-	private BodyType? _bodyType;
-	internal Stream? _stream;
+	internal FileRef? FileRef;
+	internal Stream? CompressStream;
+	internal CompressType? CompressType;
+	internal BodyType? BodyType;
+	internal Stream? Stream;
+	public bool NoCompression { get; set; }
 
 	public int StatusCode {
 		get => string.IsNullOrEmpty(Flps[1]) ? 0 : int.Parse(Flps[1]);
@@ -106,56 +77,20 @@ public class Response : Message {
 		}
 	}
 
-	internal void EnsureWriteStream(int miniCompressionSize, CompressType? compressType) {
-		Body.Position = 0;
-		Body.SetLength(0);
+	internal void EnsureWriteStream() {
+		if (CompressType == null || NoCompression || CompressStream != null) return;
 
-		_miniCompressionSize = miniCompressionSize;
-		_compressType = compressType;
-
-		if (_miniCompressionSize < 1) AutoCompressWriter();
-	}
-
-	private void ResetBodyTmp() {
-		_bodyType = null;
-
-		_compressStream?.Dispose();
-		_compressStream = null;
-
-		_stream?.Close();
-		_stream?.Dispose();
-		_stream = null;
-
-		_fileRef = null;
-
-		Body.Position = 0;
-		Body.SetLength(0);
-		Headers.Del(RfcHeader.ContentType);
-		AutoCompressWriter();
-	}
-
-	public BodyType BodyType {
-		get => _bodyType ?? BodyType.None;
-		private set {
-			ResetBodyTmp();
-			_bodyType = value;
-		}
-	}
-
-	private void AutoCompressWriter() {
-		if (_compressType == null) return;
-
-		switch (_compressType) {
-			case CompressType.Brotil:
-				_compressStream = new BrotliStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
+		switch (CompressType) {
+			case h2tp.CompressType.Brotil:
+				CompressStream = new BrotliStream(Body, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(RfcHeader.ContentEncoding, "br");
 				break;
-			case CompressType.Deflate:
-				_compressStream = new DeflateStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
+			case h2tp.CompressType.Deflate:
+				CompressStream = new DeflateStream(Body, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(RfcHeader.ContentEncoding, "deflate");
 				break;
-			case CompressType.GZip:
-				_compressStream = new GZipStream(Body!, CompressionLevel.Optimal, leaveOpen: true);
+			case h2tp.CompressType.GZip:
+				CompressStream = new GZipStream(Body, CompressionLevel.Optimal, leaveOpen: true);
 				Headers.Set(RfcHeader.ContentEncoding, "gzip");
 				break;
 			default:
@@ -163,64 +98,92 @@ public class Response : Message {
 		}
 	}
 
+	private void ResetBodyInternal() {
+		BodyType = null;
+		NoCompression = false;
+		CompressStream?.Dispose();
+		CompressStream = null;
+		Stream?.Close();
+		Stream?.Dispose();
+		Stream = null;
+		FileRef = null;
+	}
+
+	public void ResetBody() {
+		ResetBodyInternal();
+
+		Body.Position = 0;
+		Body.SetLength(0);
+		Headers.Del(RfcHeader.ContentType);
+		EnsureWriteStream();
+	}
+
+
 	private void WriteBytes(ReadOnlySpan<byte> buf) {
-		if (_compressStream != null) {
-			_compressStream.Write(buf);
+		EnsureWriteStream();
+
+		if (CompressStream != null) {
+			CompressStream.Write(buf);
 		}
 		else {
-			Body ??= new(buf.Length);
 			Body.Write(buf);
-
-			if (_compressType == null || Body.Position < _miniCompressionSize) return;
-
-			var prevData = Body.ToArray();
-
-			Body.Position = 0;
-			AutoCompressWriter();
-			_compressStream!.Write(prevData);
 		}
 	}
 
-	public void Write(byte[] buf) {
-		if (BodyType is not BodyType.Binary) {
-			BodyType = BodyType.Binary;
+	private static readonly Exception WrittenException = new(
+		$"the body has been written, see `this.{nameof(ResetBody)}"
+	);
+
+	public void Write(ReadOnlySpan<byte> buf) {
+		if (BodyType != null && BodyType != h2tp.BodyType.Binary) {
+			throw WrittenException;
 		}
 
-		WriteBytes(buf.AsSpan());
+		BodyType ??= h2tp.BodyType.Binary;
+		WriteBytes(buf);
 	}
+
+	public void Write(byte[] buf) => Write(buf.AsSpan());
+
+	public void Write(ReadOnlyMemory<byte> buf) => Write(buf.Span);
+
 
 	public void Write(string txt, Encoding? encoding = null) {
-		if (BodyType is not BodyType.PlainText) {
-			BodyType = BodyType.PlainText;
+		if (BodyType != null && BodyType != h2tp.BodyType.PlainText) {
+			throw WrittenException;
 		}
 
+		BodyType ??= h2tp.BodyType.PlainText;
 		WriteBytes((encoding ?? Encoding.UTF8).GetBytes(txt).AsSpan());
 	}
 
 	public void Write(StringBuilder sb) => Write(sb.ToString());
 
-	public void WriteJSON(object val, JsonSerializerOptions? options = null) {
-		if (Body is { Position: > 0 }) {
-			ResetBodyTmp();
+	public void WriteJson(object val, JsonSerializerOptions? options = null) {
+		if (BodyType != null && BodyType != h2tp.BodyType.Json) {
+			throw WrittenException;
 		}
 
-		BodyType = BodyType.JSON;
-
-		JsonSerializer.Serialize(_compressStream ?? Body!, val, options);
+		BodyType ??= h2tp.BodyType.Json;
+		EnsureWriteStream();
+		JsonSerializer.Serialize(CompressStream ?? Body, val, options);
 	}
 
 	public void WriteFile(string path, Tuple<long, long>? range = null, bool viaSendFile = false) {
-		_bodyType = BodyType.File;
-		_fileRef = new FileRef(path, range, viaSendFile);
+		if (FileRef != null) throw WrittenException;
+
+		BodyType ??= h2tp.BodyType.File;
+		FileRef = new FileRef(path, range, viaSendFile);
 	}
 
 	public void WriteStream(Stream stream) {
-		_bodyType = BodyType.Stream;
-		_stream = stream;
+		if (Stream != null) throw WrittenException;
+		BodyType ??= h2tp.BodyType.Stream;
+		Stream = stream;
 	}
 
 	internal new void Reset() {
 		base.Reset();
-		ResetBodyTmp();
+		ResetBodyInternal();
 	}
 }

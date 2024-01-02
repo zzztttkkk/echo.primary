@@ -7,7 +7,6 @@ namespace echo.primary.core.h2tp;
 
 public partial class RequestCtx {
 	internal CancellationToken? CancellationToken = null;
-	internal bool HandleTimeout = false;
 	internal TcpConnection TcpConnection = null!;
 	internal bool Hijacked;
 
@@ -15,8 +14,9 @@ public partial class RequestCtx {
 	public Request Request { get; } = new();
 	public Response Response { get; } = new();
 
-	private static readonly byte[] NewLine = "\r\n"u8.ToArray();
-	private static readonly byte[] ChunkedEnding = "0\r\n\r\n"u8.ToArray();
+	private static readonly ReadOnlyMemory<byte> NewLine = "\r\n"u8.ToArray();
+	private static readonly ReadOnlyMemory<byte> ChunkedEnding = "0\r\n\r\n"u8.ToArray();
+	public bool IsCancellationRequested => CancellationToken is { IsCancellationRequested: true };
 
 	internal void Reset() {
 		Request.Reset();
@@ -43,30 +43,32 @@ public partial class RequestCtx {
 	private partial Task SendFileRefResponse(IAsyncWriter writer);
 
 	internal async Task SendResponse(IAsyncWriter writer) {
-		if (HandleTimeout) return;
+		if (IsCancellationRequested) return;
 
 		if (Response.BodyType != BodyType.None && string.IsNullOrEmpty(Response.Headers.ContentType)) {
 			Response.Headers.ContentType = Response.BodyType switch {
 				BodyType.PlainText => "text/plain",
 				BodyType.Binary => Mime.DefaultMimeType,
-				BodyType.JSON => "application/json",
-				BodyType.File => Mime.GetMimeType(Response._fileRef!.filename),
+				BodyType.Json => "application/json",
+				BodyType.File => Mime.GetMimeType(Response.FileRef!.Filename),
 				_ => Mime.DefaultMimeType
 			};
 		}
 
-		if (Response._fileRef != null) {
+		if (Response.FileRef != null) {
+			Response.EnsureWriteStream();
 			await SendFileRefResponse(writer);
 			return;
 		}
 
-		if (Response._stream != null) {
-			await SendChunkedStreamResponse(writer, Response._stream);
+		if (Response.Stream != null) {
+			Response.EnsureWriteStream();
+			await SendChunkedStreamResponse(writer, Response.Stream);
 			return;
 		}
 
-		if (Response._compressStream != null) {
-			await Response._compressStream.FlushAsync();
+		if (Response.CompressStream != null) {
+			await Response.CompressStream.FlushAsync();
 		}
 
 		if (Response.Body is { Length: > 0 }) {
@@ -76,7 +78,7 @@ public partial class RequestCtx {
 		await SendResponseHeader(writer);
 
 		if (Response.Body is { Length: > 0 }) {
-			await writer.Write(Response.Body.GetBuffer().AsMemory()[..(int)Response.Body.Position]);
+			await writer.Write(Response.BodyBuffer);
 			await writer.Flush();
 		}
 	}

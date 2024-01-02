@@ -6,21 +6,22 @@ namespace echo.primary.core.h2tp;
 public partial class RequestCtx {
 	internal MemoryStream ReadTmp = null!;
 
+	// ReSharper disable once UseCollectionExpression, RedundantExplicitArraySize
+	private readonly byte[] _lentmp = new byte[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 	private async Task SendRangeFileRefResponse(IAsyncWriter writer, long filesize) {
-		var fileRef = Response._fileRef!;
-		var range = fileRef.range!;
+		var fileRef = Response.FileRef!;
+		var range = fileRef.Range!;
 
-		var begin = range.Item1;
+		var (begin, end) = range;
 		if (begin < 0) begin = 0;
-		var end = range.Item2;
-
 		if (end < begin || end > filesize) {
-			throw new Exception($"bad file range, end {end} > filesize {filesize}, {fileRef.filename}");
+			throw new Exception($"bad file range, end {end} > filesize {filesize}, {fileRef.Filename}");
 		}
 
 		Response.Headers.Set(RfcHeader.ContentRange, $"bytes {begin}-{end}/{filesize}");
 
-		await using var fs = fileRef.fileinfo.OpenRead();
+		await using var fs = fileRef.FileInfo.OpenRead();
 		fs.Seek(begin, SeekOrigin.Begin);
 
 		var remain = begin - end + 1;
@@ -31,19 +32,54 @@ public partial class RequestCtx {
 				throw new Exception("");
 			}
 
-			await SendSmallBytesResponse(writer, buf[..rl]);
+			await SendSmallResponse(writer, buf[..rl]);
 			return;
 		}
 
-		await SendSizedChunkedStreamResponse(writer, fs, remain);
+		await SendSizeLimitedChunkedStreamResponse(writer, fs, remain);
 	}
 
-	private async Task SendSmallBytesResponse(IAsyncWriter writer, ReadOnlyMemory<byte> bytes) { }
+	private async Task SendSmallResponse(IAsyncWriter writer, ReadOnlyMemory<byte> bytes) {
+		Response.Write(bytes);
+		if (Response.CompressStream != null) {
+			await Response.CompressStream.FlushAsync();
+		}
 
-	private async Task SendSizedChunkedStreamResponse(IAsyncWriter writer, Stream stream, long remain) {
+		Response.Headers.ContentLength = Response.Body.Position;
+		await SendResponseHeader(writer);
+		await writer.Write(Response.BodyBuffer);
+	}
+
+	private static readonly byte[] HexDigits = "0123456789ABCDEF"u8.ToArray();
+
+	private static int IntToHex(IList<byte> dst, int val) {
+		var ridx = 0;
+		var widx = 0;
+		var nzl = false;
+		while (ridx < 8) {
+			var bv = val >> (7 - ridx) * 4;
+			if (bv == 0) {
+				if (!nzl) {
+					ridx++;
+					continue;
+				}
+			}
+			else {
+				nzl = true;
+			}
+
+			dst[widx] = HexDigits[bv & 0xf];
+			ridx++;
+			widx++;
+		}
+
+		return widx;
+	}
+
+	private async Task SendSizeLimitedChunkedStreamResponse(IAsyncWriter writer, Stream stream, long remain) {
 		if (remain < 1) return;
-		if (Response._compressStream != null) {
-			await _SendSizedChunkedStreamWithCompresion(writer, stream, remain);
+		if (Response.CompressStream != null) {
+			await _SendSizedChunkedStreamWithCompression(writer, stream, remain);
 			return;
 		}
 
@@ -58,7 +94,7 @@ public partial class RequestCtx {
 
 			var rl = await stream.ReadAsync(buf);
 			if (rl == 0) {
-				throw new Exception("read failed");
+				throw new EndOfStreamException();
 			}
 
 			remain -= rl;
@@ -67,7 +103,7 @@ public partial class RequestCtx {
 				break;
 			}
 
-			await writer.Write(Encoding.ASCII.GetBytes($"{rl}\r\n"));
+			await WriteChunkLength(writer, _lentmp, rl);
 			await writer.Write(buf[..rl]);
 			await writer.Write(NewLine);
 		}
@@ -75,11 +111,19 @@ public partial class RequestCtx {
 		await writer.Flush();
 	}
 
+	private static Task WriteChunkLength(IAsyncWriter writer, byte[] lentmp, int len) {
+		var i = IntToHex(lentmp, len);
+		lentmp[i] = (byte)'\r';
+		lentmp[i + 1] = (byte)'\n';
+		return writer.Write(lentmp[..(i + 2)]);
+	}
+
 	private async Task SendChunkedStreamResponse(IAsyncWriter writer, Stream stream) {
 		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
+		await SendResponseHeader(writer);
 
-		if (Response._compressStream != null) {
-			await _SendChunkedStreamWithCompresion(writer, stream);
+		if (Response.CompressStream != null) {
+			await _SendChunkedStreamWithCompression(writer, stream);
 			return;
 		}
 
@@ -92,7 +136,7 @@ public partial class RequestCtx {
 				break;
 			}
 
-			await writer.Write(Encoding.ASCII.GetBytes($"{rl}\r\n"));
+			await WriteChunkLength(writer, _lentmp, rl);
 			await writer.Write(buf[..rl]);
 			await writer.Write(NewLine);
 		}
@@ -100,7 +144,7 @@ public partial class RequestCtx {
 		await writer.Flush();
 	}
 
-	private async Task _SendSizedChunkedStreamWithCompresion(
+	private async Task _SendSizedChunkedStreamWithCompression(
 		IAsyncWriter writer,
 		Stream stream,
 		long remain
@@ -108,7 +152,7 @@ public partial class RequestCtx {
 		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
 		await SendResponseHeader(writer);
 
-		var cs = Response._compressStream!;
+		var cs = Response.CompressStream!;
 		var body = Response.Body!;
 
 		while (true) {
@@ -147,10 +191,8 @@ public partial class RequestCtx {
 		await writer.Flush();
 	}
 
-	private async Task _SendChunkedStreamWithCompresion(IAsyncWriter writer, Stream stream) {
-		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
-
-		var cs = Response._compressStream!;
+	private async Task _SendChunkedStreamWithCompression(IAsyncWriter writer, Stream stream) {
+		var cs = Response.CompressStream!;
 		var body = Response.Body!;
 		var buf = ReadTmp.GetBuffer().AsMemory();
 
@@ -159,8 +201,8 @@ public partial class RequestCtx {
 
 			await cs.WriteAsync(buf[..rl]);
 			if (body.Position >= ReadTmp.Length) {
-				await writer.Write(Encoding.ASCII.GetBytes($"{body.Position}\r\n"));
-				await writer.Write(body.GetBuffer().AsMemory()[..rl]);
+				await WriteChunkLength(writer, _lentmp, (int)body.Position);
+				await writer.Write(Response.BodyBuffer);
 				await writer.Write(NewLine);
 				body.Position = 0;
 			}
@@ -170,9 +212,11 @@ public partial class RequestCtx {
 			}
 		}
 
+		await cs.FlushAsync();
+
 		if (body.Position != 0) {
-			await writer.Write(Encoding.ASCII.GetBytes($"{body.Position}\r\n"));
-			await writer.Write(body.GetBuffer().AsMemory()[..(int)(body.Position)]);
+			await WriteChunkLength(writer, _lentmp, (int)body.Position);
+			await writer.Write(Response.BodyBuffer);
 			await writer.Write(NewLine);
 		}
 
@@ -182,19 +226,18 @@ public partial class RequestCtx {
 	}
 
 	private async partial Task SendFileRefResponse(IAsyncWriter writer) {
-		var fileRef = Response._fileRef!;
-		var filesize = await Task.Run(() => fileRef.fileinfo.Length);
+		var fileRef = Response.FileRef!;
+		var filesize = await Task.Run(() => fileRef.FileInfo.Length);
 
-		if (fileRef.range == null && fileRef.viaSendFile) {
+		if (fileRef.Range == null && fileRef.ViaSendFile) {
 			Response.Headers.ContentLength = filesize;
-			Response.Headers.Del(RfcHeader.ContentEncoding);
 			await SendResponseHeader(writer);
 			await writer.Flush();
-			await writer.SendFile(fileRef.filename);
+			await writer.SendFile(fileRef.Filename);
 			return;
 		}
 
-		if (fileRef.range != null) {
+		if (fileRef.Range != null) {
 			await SendRangeFileRefResponse(writer, filesize);
 			return;
 		}
@@ -202,22 +245,19 @@ public partial class RequestCtx {
 		var tmp = ReadTmp.GetBuffer().AsMemory();
 
 		if (filesize <= ReadTmp.Length) {
-			await using var smallFs = fileRef.fileinfo.OpenRead();
+			await using var smallfs = fileRef.FileInfo.OpenRead();
 
 			var rbuf = tmp[..(int)filesize];
-			var rl = await smallFs.ReadAsync(rbuf);
+			var rl = await smallfs.ReadAsync(rbuf);
 			if (rl != filesize) {
 				throw new IOException("read failed");
 			}
 
-			await SendSmallBytesResponse(writer, rbuf[..rl]);
+			await SendSmallResponse(writer, rbuf[..rl]);
 			return;
 		}
 
-		Response.Headers.Set(RfcHeader.TransferEncoding, "chunked");
-		await SendResponseHeader(writer);
-
-		await using var bigFs = fileRef.fileinfo.OpenRead();
-		await SendChunkedStreamResponse(writer, bigFs);
+		await using var bigfs = fileRef.FileInfo.OpenRead();
+		await SendChunkedStreamResponse(writer, bigfs);
 	}
 }

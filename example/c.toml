@@ -1,3 +1,4 @@
 ﻿[tcp]
 
 [http]
+compression = true

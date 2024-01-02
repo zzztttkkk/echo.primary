@@ -1,22 +1,20 @@
 ﻿namespace echo.primary.core.h2tp;
 
-public class Headers {
-	private Dictionary<string, List<string>>? data;
+public class MultiMap(bool ignoreCase = false) {
+	private Dictionary<string, List<string>>? _data;
 
 	public void Clear() {
-		data?.Clear();
+		_data?.Clear();
 	}
 
-	public int KeySize => data?.Count ?? 0;
+	public int KeySize => _data?.Count ?? 0;
 	public bool Empty => KeySize < 1;
 
 	public List<string>? GetAll(string key, bool isLowercase = false) {
-		if (data == null) return null;
-		data.TryGetValue(isLowercase ? key : key.ToLower(), out var lst);
+		if (_data == null) return null;
+		_data.TryGetValue(isLowercase || !ignoreCase ? key : key.ToLower(), out var lst);
 		return lst;
 	}
-
-	public List<string>? GetAll(RfcHeader key) => GetAll(HeaderToString.ToString(key), true);
 
 	public string? GetFirst(string key, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
@@ -24,15 +22,11 @@ public class Headers {
 		return lst.First();
 	}
 
-	public string? GetFirst(RfcHeader key) => GetFirst(HeaderToString.ToString(key), true);
-
 	public string? GetLast(string key, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
 		if (lst == null || lst.Count < 1) return null;
 		return lst.Last();
 	}
-
-	public string? GetLast(RfcHeader key) => GetLast(HeaderToString.ToString(key), true);
 
 	public void Add(string key, string val, bool isLowercase = false) {
 		var lst = GetAll(key, isLowercase);
@@ -41,33 +35,47 @@ public class Headers {
 			return;
 		}
 
-		data ??= new();
-		data[isLowercase ? key : key.ToLower()] = [val];
+		_data ??= new();
+		_data[isLowercase || !ignoreCase ? key : key.ToLower()] = [val];
 	}
-
-	public void Add(RfcHeader key, string val) => Add(HeaderToString.ToString(key), val, true);
 
 	public void Set(string key, string val, bool isLowercase = false) {
-		data ??= new();
-		data[isLowercase ? key : key.ToLower()] = [val];
+		_data ??= new();
+		_data[isLowercase || !ignoreCase ? key : key.ToLower()] = [val];
 	}
-
-	public void Set(RfcHeader key, string val) => Set(HeaderToString.ToString(key), val, true);
 
 	public void Del(string key, bool isLowercase = false) {
-		data?.Remove(isLowercase ? key : key.ToLower());
+		_data?.Remove(isLowercase || !ignoreCase ? key : key.ToLower());
 	}
-
-	public void Del(RfcHeader key) => Del(HeaderToString.ToString(key), true);
 
 	public delegate void Visitor(string key, List<string> lst);
 
 	public void Each(Visitor visitor) {
-		if (data == null) return;
-		foreach (var pair in data) {
+		if (_data == null) return;
+		foreach (var pair in _data) {
 			visitor(pair.Key, pair.Value);
 		}
 	}
+}
+
+public class Headers() : MultiMap(true) {
+	public List<string>? GetAll(RfcHeader key) => GetAll(HeaderToString.ToString(key), true);
+
+
+	public string? GetFirst(RfcHeader key) => GetFirst(HeaderToString.ToString(key), true);
+
+
+	public string? GetLast(RfcHeader key) => GetLast(HeaderToString.ToString(key), true);
+
+
+	public void Add(RfcHeader key, string val) => Add(HeaderToString.ToString(key), val, true);
+
+
+	public void Set(RfcHeader key, string val) => Set(HeaderToString.ToString(key), val, true);
+
+
+	public void Del(RfcHeader key) => Del(HeaderToString.ToString(key), true);
+
 
 	public long? ContentLength {
 		get {

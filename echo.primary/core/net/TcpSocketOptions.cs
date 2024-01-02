@@ -11,7 +11,7 @@ public class SslOptions {
 	[Toml(Optional = true)] public string? Password { get; set; } = null;
 	public SslProtocols Protocols { get; set; } = SslProtocols.None;
 
-	[Toml(Ingored = true)]
+	[Toml(Ignored = true)]
 	public RemoteCertificateValidationCallback? RemoteCertificateValidationCallback { get; set; } = null;
 
 	public bool ClientCertificateRequired { get; set; } = false;

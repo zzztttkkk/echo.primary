@@ -161,7 +161,6 @@ public class TcpConnection(TcpServer server, Socket socket)
 			// ignored
 		}
 
-
 		try {
 			_stream?.Dispose();
 		}
@@ -169,14 +168,12 @@ public class TcpConnection(TcpServer server, Socket socket)
 			// ignored
 		}
 
-
 		try {
 			_sslStream?.Close();
 		}
 		catch {
 			// ignored
 		}
-
 
 		try {
 			_sslStream?.Dispose();
@@ -192,14 +189,12 @@ public class TcpConnection(TcpServer server, Socket socket)
 			// ignored
 		}
 
-
 		try {
 			Socket.Close();
 		}
 		catch {
 			// ignored
 		}
-
 
 		try {
 			Socket.Dispose();

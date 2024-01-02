@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -19,7 +20,7 @@ public interface ITomlDeserializable {
 public class Toml : Attribute {
 	public string Name = "";
 	public object? Aliases = null;
-	public bool Ingored = false;
+	public bool Ignored = false;
 	public bool Optional = false;
 	public string Description = "";
 	public Type? ParserType = null;
@@ -65,12 +66,32 @@ internal static class TomlValueHelper {
 
 public static class TomlLoader {
 	private static bool IsSimpleType(Type t) {
-		return t.IsPrimitive || new List<Type> {
+		return t.IsPrimitive || t.IsEnum || new List<Type> {
 			typeof(string), typeof(Color), typeof(TimeSpan), typeof(DateTime)
 		}.Contains(t);
 	}
 
 	private static object ToSimpleType(object val, Type type) {
+		if (type.IsEnum) {
+			switch (val) {
+				case string t: {
+					return Enum.Parse(type, t, ignoreCase: true);
+				}
+				default: {
+					if (Reflection.IsIntType(val.GetType())) {
+						var obj = Enum.ToObject(type, (long)val);
+						if (!Enum.IsDefined(type, obj)) {
+							throw new Exception($"{val} can not cast to enum {type.FullName}");
+						}
+
+						return obj;
+					}
+
+					throw new Exception($"{val} can not cast to enum ${type.FullName}");
+				}
+			}
+		}
+
 		if (Reflection.IsIntType(type)) {
 			try {
 				return Reflection.ObjectToInt(val, type);
@@ -82,11 +103,15 @@ public static class TomlLoader {
 							return Reflection.StringToInt(txt, type, frombase: 10);
 						}
 						catch (Exception) {
+							if (txt.StartsWith("0x") || txt.StartsWith("0X")) {
+								txt = txt.Substring(2, txt.Length - 2);
+							}
+
 							return Reflection.StringToInt(txt, type, frombase: 16);
 						}
 					}
 					default: {
-						throw;
+						throw new Exception($"{val} can not cast to int");
 					}
 				}
 			}
@@ -188,7 +213,7 @@ public static class TomlLoader {
 			if (!property.CanWrite) continue;
 
 			var attr = property.GetCustomAttributes<Toml>(true).FirstOrDefault(new Toml());
-			if (attr.Ingored) continue;
+			if (attr.Ignored) continue;
 
 			if (string.IsNullOrEmpty(attr.Name)) attr.Name = property.Name;
 
@@ -306,13 +331,62 @@ public static class TomlLoader {
 		}
 	}
 
+	private static readonly Regex EnvRegexp = new(@"\$ENV{\s*\w+\s*}");
+
+	private static string ReplaceEnvVariableInternal(string txt) {
+		EnvRegexp.Replace(txt, match => {
+			var name = match.Value.Substring(5, match.Value.Length - 6).Trim();
+			return Environment.GetEnvironmentVariable(name) ?? match.Value;
+		});
+		return txt;
+	}
+
+	private static void ReplaceEnvVariable(object? val) {
+		switch (val) {
+			case TomlTable table: {
+				foreach (var pair in table) {
+					if (pair.Value is string value) {
+						table[pair.Key] = ReplaceEnvVariableInternal(value);
+					}
+					else {
+						ReplaceEnvVariable(pair.Value);
+					}
+				}
+
+				break;
+			}
+			case TomlArray array: {
+				for (var i = 0; i < array.Count; i++) {
+					var tmp = array[i];
+					if (tmp is string value) {
+						array[i] = ReplaceEnvVariableInternal(value);
+					}
+					else {
+						ReplaceEnvVariable(tmp);
+					}
+				}
+
+				break;
+			}
+			case TomlTableArray tarray: {
+				foreach (var table in tarray) {
+					ReplaceEnvVariable(table);
+				}
+
+				break;
+			}
+		}
+	}
+
 	public static TomlTable ParseFile(string filename) {
 		var doc = Tomlyn.Toml.Parse(File.ReadAllText(filename));
 		if (doc.HasErrors) {
 			throw new Exception(doc.Diagnostics[0].ToString());
 		}
 
-		return doc.ToModel();
+		var table = doc.ToModel();
+		ReplaceEnvVariable(table);
+		return table;
 	}
 
 	public enum TomlArrayMergePolicy {
@@ -321,7 +395,7 @@ public static class TomlLoader {
 		AppendUnique,
 	}
 
-	private static bool tomlValueEqual(object? a, object? b) {
+	private static bool TomlValueEqual(object? a, object? b) {
 		if (a == null && b == null) return true;
 		if (a == null || b == null) return false;
 		if (a.GetType() != b.GetType()) return false;
@@ -333,8 +407,8 @@ public static class TomlLoader {
 		};
 	}
 
-	private static bool tomlArrayContains(TomlArray ary, object? ele) {
-		return ary.Any(v => tomlValueEqual(v, ele));
+	private static bool TomlArrayContains(TomlArray ary, object? ele) {
+		return ary.Any(v => TomlValueEqual(v, ele));
 	}
 
 	public static TomlTable Merge(
@@ -373,7 +447,7 @@ public static class TomlLoader {
 						}
 						case TomlArrayMergePolicy.AppendUnique: {
 							var dpv = GetArray(pair.Key);
-							foreach (var ele in pa.Where(ele => !tomlArrayContains(dpv, ele))) {
+							foreach (var ele in pa.Where(ele => !TomlArrayContains(dpv, ele))) {
 								dpv.Add(ele);
 							}
 

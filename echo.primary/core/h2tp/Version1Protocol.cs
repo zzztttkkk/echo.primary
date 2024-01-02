@@ -25,10 +25,8 @@ public class HttpOptions {
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
 	public int HandleTimeout { get; set; } = 0;
 
-	[Toml(Optional = true)] public bool EnableCompression { get; set; } = false;
-
-	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int MinCompressionSize { get; set; } = 1024;
+	[Toml(Optional = true, Aliases = new[] { "compression" })]
+	public bool EnableCompression { get; set; } = false;
 
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
 	public int StreamReadBufferSize { get; set; } = 4096;
@@ -108,8 +106,15 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[0] =
-						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]);
+
+					if (readTmp.Position <= 1) {
+						CloseWithException("bad message, empty request method");
+						break;
+					}
+
+					req.Flps[0] = Encoding.Latin1.GetString(
+						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
+					).ToUpper();
 					flBytesSize += readTmp.Position;
 					readStatus = MessageReadStatus.Fl1Ok;
 					break;
@@ -120,15 +125,25 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[1] =
-						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]);
+
+					if (readTmp.Position <= 1) {
+						CloseWithException("bad message, empty request path");
+						break;
+					}
+
+					req.Flps[1] = Encoding.Latin1.GetString(
+						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
+					);
 					if (string.IsNullOrEmpty(req.Flps[1])) {
 						req.Flps[1] = "/";
 					}
 
 					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
-						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
+						CloseWithException(
+							$"bad request, reach {nameof(options.MaxFirstLineBytesSize)}"
+						);
+						break;
 					}
 
 					readStatus = MessageReadStatus.Fl2Ok;
@@ -140,11 +155,22 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						maxBytesSize: options.MaxFirstLineBytesSize,
 						timeoutMills: RemainMills(begin)
 					);
-					req.Flps[2] =
-						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 2)]);
+
+					if (readTmp.Position <= 2) {
+						CloseWithException("bad message, empty request proto version");
+						break;
+					}
+
+					req.Flps[2] = Encoding.Latin1.GetString(
+						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 2)]
+					);
+
 					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
-						throw new Exception($"bad request, reach {nameof(options.MaxFirstLineBytesSize)}");
+						CloseWithException(
+							$"bad request, reach {nameof(options.MaxFirstLineBytesSize)}"
+						);
+						break;
 					}
 
 					readStatus = MessageReadStatus.Fl3Ok;
@@ -167,21 +193,23 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						}
 
 						var idx = line.IndexOf(':');
+						if (idx < 0) {
+							CloseWithException("bad message, unexpected header line");
+							break;
+						}
+
 						req.Headers.Add(line[..idx].Trim(), line[(idx + 1)..].Trim());
 
 						if (options.MaxHeadersCount < 1) continue;
-						if (++headersCount > options.MaxHeadersCount) {
-							throw new Exception($"bad request, reach {nameof(options.MaxHeadersCount)}");
-						}
+						if (++headersCount <= options.MaxHeadersCount) continue;
+
+						CloseWithException($"bad request, reach {nameof(options.MaxHeadersCount)}");
+						break;
 					}
 
 					break;
 				}
 				case MessageReadStatus.HeaderOk: {
-					var host = req.Headers.GetLast(RfcHeader.Host) ?? "localhost";
-					var protocol = conn.IsOverSsl ? "https" : "http";
-					req._uri = new Uri($"{protocol}://{host}{req.Flps[1]}");
-
 					var cls = req.Headers.GetAll("content-length");
 					if (cls == null) {
 						readStatus = MessageReadStatus.BodyOk;
@@ -189,7 +217,8 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					}
 
 					if (!long.TryParse(cls.LastOrDefault(""), out var bodySize)) {
-						throw new Exception("bad content-length");
+						CloseWithException("bad message, unexpected content-length");
+						break;
 					}
 
 					if (bodySize < 1) {
@@ -198,7 +227,8 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					}
 
 					if (options.MaxBodyBytesSize > 0 && bodySize > options.MaxBodyBytesSize) {
-						throw new Exception($"bad request, reach {nameof(options.MaxBodyBytesSize)}");
+						CloseWithException($"bad request, reach {nameof(options.MaxBodyBytesSize)}");
+						break;
 					}
 
 					req.Body.SetLength(0);
@@ -226,25 +256,30 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 				case MessageReadStatus.BodyOk: {
 					await HandleRequest(ctx);
 					stop = ctx.Hijacked;
-					if (!stop) {
-						if (ctx.ShouldKeepAlive) {
-							ctx.Reset();
-							readStatus = MessageReadStatus.None;
-							flBytesSize = 0;
-							headersCount = 0;
-							begin = Time.unixmills();
-							continue;
-						}
+					if (stop) break;
 
-						await conn.Flush();
+					if (!ctx.ShouldKeepAlive) {
 						conn.Close();
 						stop = true;
+						break;
 					}
 
-					break;
+					ctx.Reset();
+					readStatus = MessageReadStatus.None;
+					flBytesSize = 0;
+					headersCount = 0;
+					begin = Time.unixmills();
+					continue;
 				}
 				default: throw new UnreachableException();
 			}
+		}
+
+		return;
+
+		void CloseWithException(string msg) {
+			conn.Close(new Exception(msg));
+			stop = true;
 		}
 	}
 
@@ -254,17 +289,11 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 			if (options.HandleTimeout > 0) {
 				cts = new CancellationTokenSource();
 				ctx.CancellationToken = cts.Token;
-				ctx.CancellationToken.Value.Register(() => {
-					ctx.HandleTimeout = true;
-					_connection!.Close(new Exception("handle timeout"));
-				});
+				ctx.CancellationToken.Value.Register(() => { _connection!.Close(new Exception("handle timeout")); });
 				cts.CancelAfter(options.HandleTimeout);
 			}
 
-			ctx.Response.EnsureWriteStream(
-				options.MinCompressionSize,
-				options.EnableCompression ? ctx.Request.Headers.AcceptedCompressType : null
-			);
+			ctx.Response.CompressType = options.EnableCompression ? ctx.Request.Headers.AcceptedCompressType : null;
 			await handler.Handle(ctx);
 			await ctx.SendResponse(_connection!);
 			// todo keep-alive
@@ -284,7 +313,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 
 		switch (exception) {
 			case IOException: {
-				Console.WriteLine($"Connection Lost");
+				Console.WriteLine("Connection Lost");
 				return;
 			}
 			default: {
