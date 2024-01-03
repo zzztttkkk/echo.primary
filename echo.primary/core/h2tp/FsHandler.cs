@@ -1,23 +1,33 @@
-﻿using echo.primary.utils;
+﻿using System.Globalization;
+using echo.primary.utils;
 
 namespace echo.primary.core.h2tp;
 
-public class FsHandlerOptions(string root, string prefix = "/static/") {
-	[Toml(Optional = true)] public string Root { get; set; } = root;
-	[Toml(Optional = true)] public string Prefix { get; set; } = prefix;
+public class FsOptions {
+	[Toml(Optional = true)] public string Root { get; set; } = "./static";
+	[Toml(Optional = true)] public string Prefix { get; set; } = "/static/";
 
-	[Toml(Ignored = true)] public FsHandler.PreCheck? PreCheck { get; set; } = null;
-	[Toml(Ignored = true)] public FsHandler.IndexRender? IndexRender { get; set; } = null;
+	// ReSharper disable once MemberCanBePrivate.Global
+	[Toml(Optional = true, ParserType = typeof(TomlParsers.DurationParser))]
+	public uint CacheMaxAge { get; set; } = 7 * 86400_000;
+
+	public uint CacheMaxAgeSeconds => CacheMaxAge / 1000;
+
+	[Toml(Ignored = true)] public FsHandler.PreCheckFunc? PreCheckFunc { get; set; } = null;
+	[Toml(Ignored = true)] public FsHandler.IndexRenderFunc? IndexRenderFunc { get; set; } = null;
+	[Toml(Ignored = true)] public FsHandler.ETagMakeFunc? ETagMakeFunc { get; set; } = null;
 }
 
-public class FsHandler(FsHandlerOptions opts) : IHandler {
-	public delegate Task<bool> PreCheck(RequestCtx ctx, FileInfo info);
+public class FsHandler(FsOptions opts) : IHandler {
+	public delegate Task<bool> PreCheckFunc(RequestCtx ctx, FileSystemInfo info);
 
-	public delegate Task IndexRender(FsHandler handler, RequestCtx ctx, DirectoryInfo dir);
+	public delegate Task IndexRenderFunc(FsHandler handler, RequestCtx ctx, DirectoryInfo dir);
 
+	public delegate Task<string> ETagMakeFunc(FileInfo info);
 
 	private static async Task DefaultIndexRender(FsHandler handler, RequestCtx ctx, DirectoryInfo dir) {
 		ctx.Response.Headers.ContentType = "text/html";
+		ctx.Response.Headers.Set(RfcHeader.LastModified, dir.LastWriteTime.ToString("R"));
 
 		var fs = await Task.Run(dir.GetFileSystemInfos);
 
@@ -41,6 +51,7 @@ public class FsHandler(FsHandlerOptions opts) : IHandler {
 		return Task.CompletedTask;
 	}
 
+	// ReSharper disable once UnusedMember.Local
 	private readonly InitFunc _ = new(() => {
 		opts.Prefix = opts.Prefix.Trim();
 		opts.Root = opts.Root.Trim();
@@ -51,6 +62,7 @@ public class FsHandler(FsHandlerOptions opts) : IHandler {
 	});
 
 	private readonly DirectoryInfo _root = new(opts.Root);
+	private static readonly string[] NoCacheValues = ["no-cache", "max-age=0", "must-revalidate"];
 
 	// ReSharper disable once MemberCanBePrivate.Global
 	public string MakeUrl(FileSystemInfo fp) {
@@ -80,7 +92,13 @@ public class FsHandler(FsHandlerOptions opts) : IHandler {
 		if (!await Task.Run(() => fileinfo.Exists)) {
 			if (fileinfo.Directory != null) {
 				if (await Task.Run(() => fileinfo.Directory.Exists)) {
-					await (opts.IndexRender ?? DefaultIndexRender)(this, ctx, fileinfo.Directory);
+					if (opts.PreCheckFunc != null && !await opts.PreCheckFunc(ctx, fileinfo)) {
+						ctx.Response.StatusCode = (int)RfcStatusCode.Forbidden;
+						return;
+					}
+
+					// todo cache dir
+					await (opts.IndexRenderFunc ?? DefaultIndexRender)(this, ctx, fileinfo.Directory);
 					return;
 				}
 			}
@@ -89,8 +107,41 @@ public class FsHandler(FsHandlerOptions opts) : IHandler {
 			return;
 		}
 
-		ctx.Response.Headers.Set(RfcHeader.LastModified, fileinfo.LastWriteTime.ToString("R"));
+		if (opts.PreCheckFunc != null && !await opts.PreCheckFunc(ctx, fileinfo)) {
+			ctx.Response.StatusCode = (int)RfcStatusCode.Forbidden;
+			return;
+		}
+
+		var lwt = fileinfo.LastWriteTime;
+		ctx.Response.Headers.Set(RfcHeader.LastModified, lwt.ToString("R"));
+		ctx.Response.Headers.Set(RfcHeader.CacheControl, $"max-age={opts.CacheMaxAgeSeconds}");
+
+		var noCache = false;
+		var ccs = ctx.Request.Headers.GetAll(RfcHeader.CacheControl);
+		if (ccs != null) {
+			noCache = ccs.Any(cc => NoCacheValues.Any(cc.Contains));
+		}
+
+		if (!noCache) {
+			var ifModifiedSince = ctx.Request.Headers.GetLast(RfcHeader.IfModifiedSince);
+			if (!string.IsNullOrEmpty(ifModifiedSince)) {
+				if (
+					DateTime.TryParseExact(
+						ifModifiedSince,
+						format: "R",
+						provider: null, style: DateTimeStyles.None,
+						out var cliTime
+					)
+				) {
+					if ((long)lwt.Subtract(cliTime).TotalSeconds <= 0) {
+						ctx.Response.StatusCode = (int)RfcStatusCode.NotModified;
+						return;
+					}
+				}
+			}
+		}
+
 		ctx.Response.NoCompression = fileinfo.Length <= 4096;
-		ctx.Response.WriteFile(fileinfo.FullName, fileinfo: fileinfo);
+		ctx.Response.WriteFile(fileinfo.FullName, fileinfo: fileinfo, viaSendFile: true);
 	}
 }

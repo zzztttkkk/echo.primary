@@ -124,7 +124,7 @@ public class Response : Message {
 	}
 
 
-	private void WriteBytes(ReadOnlySpan<byte> buf) {
+	internal void WriteBytes(ReadOnlySpan<byte> buf) {
 		EnsureWriteStream();
 
 		if (CompressStream != null) {

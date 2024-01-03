@@ -18,4 +18,11 @@ public class AnyTest {
 
 		Console.WriteLine("OK");
 	}
+
+	[Test]
+	public void Any() {
+		var now = DateTime.Now;
+		Console.WriteLine(now.ToString("R"));
+		Console.WriteLine(DateTime.ParseExact(now.ToString("R"), format: "R", provider: null).ToString("R"));
+	}
 }

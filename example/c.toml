@@ -2,3 +2,7 @@
 
 [http]
 compression = true
+
+[fs]
+root = "./"
+prefix = "/static/"

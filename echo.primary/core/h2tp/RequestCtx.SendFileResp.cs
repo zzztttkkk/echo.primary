@@ -23,7 +23,7 @@ public partial class RequestCtx {
 		fs.Seek(begin, SeekOrigin.Begin);
 
 		var remain = begin - end + 1;
-		if (remain <= ReadTmp.Length) {
+		if (remain <= ReadTmp.Capacity) {
 			var buf = ReadTmp.GetBuffer().AsMemory();
 			var rl = await fs.ReadAsync(buf);
 			if (rl != remain) {
@@ -38,7 +38,7 @@ public partial class RequestCtx {
 	}
 
 	private async Task SendSmallResponse(IAsyncWriter writer, ReadOnlyMemory<byte> bytes) {
-		Response.Write(bytes);
+		Response.WriteBytes(bytes.Span);
 		if (Response.CompressStream != null) {
 			await Response.CompressStream.FlushAsync();
 		}
@@ -60,7 +60,7 @@ public partial class RequestCtx {
 
 		while (true) {
 			var buf = ReadTmp.GetBuffer().AsMemory();
-			if (remain < ReadTmp.Length) {
+			if (remain < ReadTmp.Capacity) {
 				buf = buf[..(int)remain];
 			}
 
@@ -134,7 +134,7 @@ public partial class RequestCtx {
 
 		while (true) {
 			var buf = ReadTmp.GetBuffer().AsMemory();
-			if (remain < ReadTmp.Length) {
+			if (remain < ReadTmp.Capacity) {
 				buf = buf[..(int)remain];
 			}
 
@@ -144,7 +144,7 @@ public partial class RequestCtx {
 			}
 
 			await cs.WriteAsync(buf[..rl]);
-			if (body.Position >= ReadTmp.Length) {
+			if (body.Position >= ReadTmp.Capacity) {
 				await writer.Write(Encoding.ASCII.GetBytes($"{body.Position}\r\n"));
 				await writer.Write(body.GetBuffer().AsMemory()[..rl]);
 				await writer.Write(NewLine);
@@ -177,7 +177,7 @@ public partial class RequestCtx {
 			var rl = await stream.ReadAsync(buf);
 
 			await cs.WriteAsync(buf[..rl]);
-			if (body.Position >= ReadTmp.Length) {
+			if (body.Position >= ReadTmp.Capacity) {
 				await WriteChunkLength(writer, (int)body.Position);
 				await writer.Write(Response.BodyBuffer);
 				await writer.Write(NewLine);
@@ -204,7 +204,7 @@ public partial class RequestCtx {
 
 	private async partial Task SendFileRefResponse(IAsyncWriter writer) {
 		var fileRef = Response.FileRef!;
-		var filesize = await Task.Run(() => fileRef.FileInfo.Length);
+		var filesize = fileRef.FileInfo.Length;
 
 		if (fileRef.Range == null && fileRef.ViaSendFile) {
 			Response.Headers.ContentLength = filesize;
@@ -221,7 +221,7 @@ public partial class RequestCtx {
 
 		var tmp = ReadTmp.GetBuffer().AsMemory();
 
-		if (filesize <= ReadTmp.Length) {
+		if (filesize <= ReadTmp.Capacity) {
 			await using var smallfs = fileRef.FileInfo.OpenRead();
 
 			var rbuf = tmp[..(int)filesize];
