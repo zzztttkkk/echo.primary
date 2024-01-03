@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text;
 using echo.primary.core.h2tp;
 using echo.primary.utils;
 
@@ -50,13 +51,49 @@ public class TomlLoaderTest {
 		}
 	}
 
+	private static readonly byte[] HexTable = new byte[512];
+
+	public static readonly InitFunc _ = new(() => {
+		var digits = "0123456789ABCDEF"u8.ToArray();
+		var i = 0;
+		foreach (var y in digits) {
+			foreach (var x in digits) {
+				HexTable[i] = y;
+				i++;
+				HexTable[i] = x;
+				i++;
+			}
+		}
+	});
 
 	[Test]
 	public void TestDefer() {
-		using (new Defer(() => Console.WriteLine("1"))) {
-			using (new Defer(() => Console.WriteLine("2"))) {
-				Console.WriteLine("3");
+		var tmp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+		var x = (uint)156;
+		var i = 3;
+		while (i >= 0) {
+			var pos = (x & 0xff) * 2;
+			var c = HexTable[pos];
+			tmp[i * 2] = c;
+
+			c = HexTable[pos + 1];
+			tmp[(i << 1) + 1] = c;
+
+			x >>= 8;
+			i -= 1;
+		}
+
+		i = 0;
+		for (; i < 8; i++) {
+			if (tmp[i] != (byte)'0') {
+				break;
 			}
 		}
+
+		if (i >= 7) {
+			Console.WriteLine("0");
+		}
+
+		Console.WriteLine($"{Encoding.ASCII.GetString(tmp[i..])}");
 	}
 }

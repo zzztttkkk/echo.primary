@@ -1,13 +1,11 @@
 ﻿using System.Text;
 using echo.primary.core.io;
+using echo.primary.utils;
 
 namespace echo.primary.core.h2tp;
 
 public partial class RequestCtx {
 	internal MemoryStream ReadTmp = null!;
-
-	// ReSharper disable once UseCollectionExpression, RedundantExplicitArraySize
-	private readonly byte[] _lentmp = new byte[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	private async Task SendRangeFileRefResponse(IAsyncWriter writer, long filesize) {
 		var fileRef = Response.FileRef!;
@@ -50,32 +48,6 @@ public partial class RequestCtx {
 		await writer.Write(Response.BodyBuffer);
 	}
 
-	private static readonly byte[] HexDigits = "0123456789ABCDEF"u8.ToArray();
-
-	private static int IntToHex(IList<byte> dst, int val) {
-		var ridx = 0;
-		var widx = 0;
-		var nzl = false;
-		while (ridx < 8) {
-			var bv = val >> (7 - ridx) * 4;
-			if (bv == 0) {
-				if (!nzl) {
-					ridx++;
-					continue;
-				}
-			}
-			else {
-				nzl = true;
-			}
-
-			dst[widx] = HexDigits[bv & 0xf];
-			ridx++;
-			widx++;
-		}
-
-		return widx;
-	}
-
 	private async Task SendSizeLimitedChunkedStreamResponse(IAsyncWriter writer, Stream stream, long remain) {
 		if (remain < 1) return;
 		if (Response.CompressStream != null) {
@@ -103,7 +75,7 @@ public partial class RequestCtx {
 				break;
 			}
 
-			await WriteChunkLength(writer, _lentmp, rl);
+			await WriteChunkLength(writer, rl);
 			await writer.Write(buf[..rl]);
 			await writer.Write(NewLine);
 		}
@@ -111,11 +83,16 @@ public partial class RequestCtx {
 		await writer.Flush();
 	}
 
-	private static Task WriteChunkLength(IAsyncWriter writer, byte[] lentmp, int len) {
-		var i = IntToHex(lentmp, len);
-		lentmp[i] = (byte)'\r';
-		lentmp[i + 1] = (byte)'\n';
-		return writer.Write(lentmp[..(i + 2)]);
+	private static Task WriteChunkLength(IAsyncWriter writer, int len) {
+		// ReSharper disable once UseCollectionExpression, RedundantExplicitArraySize
+		var lentmp = new byte[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		var tmp = Hex.ToBytes((uint)len);
+		var tmplen = tmp.Length;
+		Array.Copy(tmp, lentmp, tmplen);
+
+		lentmp[tmplen] = (byte)'\r';
+		lentmp[tmplen + 1] = (byte)'\n';
+		return writer.Write(lentmp[..(tmplen + 2)]);
 	}
 
 	private async Task SendChunkedStreamResponse(IAsyncWriter writer, Stream stream) {
@@ -136,7 +113,7 @@ public partial class RequestCtx {
 				break;
 			}
 
-			await WriteChunkLength(writer, _lentmp, rl);
+			await WriteChunkLength(writer, rl);
 			await writer.Write(buf[..rl]);
 			await writer.Write(NewLine);
 		}
@@ -153,7 +130,7 @@ public partial class RequestCtx {
 		await SendResponseHeader(writer);
 
 		var cs = Response.CompressStream!;
-		var body = Response.Body!;
+		var body = Response.Body;
 
 		while (true) {
 			var buf = ReadTmp.GetBuffer().AsMemory();
@@ -193,7 +170,7 @@ public partial class RequestCtx {
 
 	private async Task _SendChunkedStreamWithCompression(IAsyncWriter writer, Stream stream) {
 		var cs = Response.CompressStream!;
-		var body = Response.Body!;
+		var body = Response.Body;
 		var buf = ReadTmp.GetBuffer().AsMemory();
 
 		while (true) {
@@ -201,7 +178,7 @@ public partial class RequestCtx {
 
 			await cs.WriteAsync(buf[..rl]);
 			if (body.Position >= ReadTmp.Length) {
-				await WriteChunkLength(writer, _lentmp, (int)body.Position);
+				await WriteChunkLength(writer, (int)body.Position);
 				await writer.Write(Response.BodyBuffer);
 				await writer.Write(NewLine);
 				body.Position = 0;
@@ -215,7 +192,7 @@ public partial class RequestCtx {
 		await cs.FlushAsync();
 
 		if (body.Position != 0) {
-			await WriteChunkLength(writer, _lentmp, (int)body.Position);
+			await WriteChunkLength(writer, (int)body.Position);
 			await writer.Write(Response.BodyBuffer);
 			await writer.Write(NewLine);
 		}

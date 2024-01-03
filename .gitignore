@@ -11,3 +11,4 @@ riderModule.iml
 *.so
 *.pfx
 /echo.primary/generated
+/BenchmarkDotNet.Artifacts
