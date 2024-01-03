@@ -33,9 +33,14 @@ public class Message {
 	}
 }
 
-internal class FileRef(string filename, Tuple<long, long>? range = null, bool viaSendFile = false) {
+internal class FileRef(
+	string filename,
+	Tuple<long, long>? range = null,
+	bool viaSendFile = false,
+	FileInfo? fileInfo = null
+) {
 	public readonly string Filename = filename;
-	public readonly FileInfo FileInfo = new(filename);
+	public readonly FileInfo FileInfo = fileInfo ?? new(filename);
 	public readonly Tuple<long, long>? Range = range;
 	public readonly bool ViaSendFile = viaSendFile;
 }
@@ -160,24 +165,28 @@ public class Response : Message {
 	public void Write(StringBuilder sb) => Write(sb.ToString());
 
 	public void WriteJson(object val, JsonSerializerOptions? options = null) {
-		if (BodyType != null && BodyType != h2tp.BodyType.Json) {
-			throw WrittenException;
-		}
+		if (BodyType != null) throw WrittenException;
 
 		BodyType ??= h2tp.BodyType.Json;
 		EnsureWriteStream();
 		JsonSerializer.Serialize(CompressStream ?? Body, val, options);
 	}
 
-	public void WriteFile(string path, Tuple<long, long>? range = null, bool viaSendFile = false) {
-		if (FileRef != null) throw WrittenException;
+	public void WriteFile(
+		string path,
+		Tuple<long, long>? range = null,
+		bool viaSendFile = false,
+		FileInfo? fileinfo = null
+	) {
+		if (BodyType != null) throw WrittenException;
 
 		BodyType ??= h2tp.BodyType.File;
-		FileRef = new FileRef(path, range, viaSendFile);
+		FileRef = new FileRef(path, range, viaSendFile, fileinfo);
 	}
 
 	public void WriteStream(Stream stream) {
-		if (Stream != null) throw WrittenException;
+		if (BodyType != null) throw WrittenException;
+
 		BodyType ??= h2tp.BodyType.Stream;
 		Stream = stream;
 	}

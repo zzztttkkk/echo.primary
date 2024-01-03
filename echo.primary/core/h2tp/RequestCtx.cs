@@ -51,7 +51,7 @@ public partial class RequestCtx {
 				BodyType.Binary => Mime.DefaultMimeType,
 				BodyType.Json => "application/json",
 				BodyType.File => Mime.GetMimeType(Response.FileRef!.Filename),
-				_ => Mime.DefaultMimeType
+				_ => null
 			};
 		}
 
@@ -71,16 +71,15 @@ public partial class RequestCtx {
 			await Response.CompressStream.FlushAsync();
 		}
 
-		if (Response.Body is { Length: > 0 }) {
-			Response.Headers.ContentLength = Response.Body.Length;
-		}
+		Response.Headers.ContentLength = Response.Body.Position;
 
 		await SendResponseHeader(writer);
 
-		if (Response.Body is { Length: > 0 }) {
+		if (Response.Body.Position > 0) {
 			await writer.Write(Response.BodyBuffer);
-			await writer.Flush();
 		}
+
+		await writer.Flush();
 	}
 
 	public delegate void ConnHandleFunc(TcpConnection connection, MemoryStream tmp);

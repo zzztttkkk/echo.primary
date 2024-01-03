@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>true</SelfContained>
+<!--        <SelfContained>true</SelfContained>-->
     </PropertyGroup>
 
     <ItemGroup>

@@ -29,11 +29,8 @@ public static class Hex {
 		var i = 3;
 		while (i >= 0) {
 			var pos = (x & 0xff) * 2;
-			var c = HexTable[pos];
-			tmp[i << 1] = c;
-
-			c = HexTable[pos + 1];
-			tmp[(i << 1) + 1] = c;
+			tmp[i << 1] = HexTable[pos];
+			tmp[(i << 1) + 1] = HexTable[pos + 1];
 
 			x >>= 8;
 			i -= 1;

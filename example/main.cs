@@ -29,7 +29,9 @@ server.Logger.AddAppender(
 
 var lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
 
-lifetime.ApplicationStarted.Register(() => { _ = server.Start(new HelloWorldHandler()); });
+var handler = new FsHandler(new FsHandlerOptions("../"));
+
+lifetime.ApplicationStarted.Register(() => { _ = server.Start(handler); });
 
 lifetime.ApplicationStopping.Register(() => { server.Stop(); });
 
