@@ -89,7 +89,7 @@ public class FsHandler(FsHandlerOptions opts) : IHandler {
 			return;
 		}
 
-		// todo cache and range
+		ctx.Response.Headers.Set(RfcHeader.LastModified, fileinfo.LastWriteTime.ToString("R"));
 		ctx.Response.NoCompression = fileinfo.Length <= 4096;
 		ctx.Response.WriteFile(fileinfo.FullName, fileinfo: fileinfo);
 	}

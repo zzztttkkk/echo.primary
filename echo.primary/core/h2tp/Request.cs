@@ -74,11 +74,7 @@ public class Request : Message {
 	public bool IsOptions => Method == RfcMethod.OPTIONS.ToString();
 	public bool IsTrace => Method == RfcMethod.TRACE.ToString();
 	public bool IsPatch => Method == RfcMethod.PATCH.ToString();
-
-	public string Version {
-		get => Flps[2];
-		set => Flps[2] = value;
-	}
+	public string ProtocolVersion => Flps[2];
 
 	public Headers Headers {
 		get {

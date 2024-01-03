@@ -24,16 +24,35 @@ public partial class RequestCtx {
 		_respWriteBuf.Clear();
 	}
 
-	public bool ShouldKeepAlive => true;
+	public bool KeepAlive {
+		get {
+			var reqVer = Request.ProtocolVersion;
+			if (!reqVer.StartsWith("HTTP/")) return false;
+			var parts = reqVer[5..].Split('.');
+			if (parts.Length != 2) return false;
+			if (!int.TryParse(parts[0], out var mv)) return false;
+			if (!int.TryParse(parts[1], out var sv)) return false;
+			if (mv < 1 || sv < 1) return false;
+
+			var cv = Response.Headers.GetLast(RfcHeader.Connection);
+			return cv == null || !cv.Equals("close", StringComparison.CurrentCultureIgnoreCase);
+		}
+	}
 
 	private async Task SendResponseHeader(IAsyncWriter writer) {
 		var version = string.IsNullOrEmpty(Response.Flps[0]) ? "HTTP/1.1" : Response.Flps[0];
 		var code = string.IsNullOrEmpty(Response.Flps[1]) ? "200" : Response.Flps[1];
 		var txt = string.IsNullOrEmpty(Response.Flps[2]) ? "OK" : Response.Flps[2];
+
+		Response.Headers.Set(RfcHeader.Date, DateTime.Now.ToString("R"));
+
 		_respWriteBuf.Append($"{version} {code} {txt}\r\n");
 		Response.Herders?.Each((k, lst) => {
 			foreach (var v in lst) {
-				_respWriteBuf.Append($"{k}: {v}\r\n");
+				_respWriteBuf.Append(k);
+				_respWriteBuf.Append(": ");
+				_respWriteBuf.Append(v);
+				_respWriteBuf.Append("\r\n");
 			}
 		});
 		_respWriteBuf.Append("\r\n");
@@ -85,8 +104,18 @@ public partial class RequestCtx {
 	public delegate void ConnHandleFunc(TcpConnection connection, MemoryStream tmp);
 
 	void Hijack(ConnHandleFunc handle) {
-		if (Hijacked) throw new Exception("");
+		if (Hijacked) throw new Exception("this http connection has been hijacked");
 		Hijacked = true;
 		handle(TcpConnection, ReadTmp);
+	}
+
+	void Close(bool immediately = false, string msg = $"force close by {nameof(RequestCtx)}.{nameof(Close)}") {
+		if (Hijacked) throw new Exception("can not close a hijacked http connection");
+		if (immediately) {
+			TcpConnection.Close(new Exception(msg));
+			return;
+		}
+
+		Response.Headers.Set(RfcHeader.Connection, "close");
 	}
 }

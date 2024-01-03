@@ -163,7 +163,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 
 					req.Flps[2] = Encoding.Latin1.GetString(
 						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 2)]
-					);
+					).ToUpper();
 
 					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
@@ -258,7 +258,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					stop = ctx.Hijacked;
 					if (stop) break;
 
-					if (!ctx.ShouldKeepAlive) {
+					if (!ctx.KeepAlive) {
 						conn.Close();
 						stop = true;
 						break;
