@@ -62,7 +62,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 				conn.MemoryStreamMemoryStreamPool.Get(
 					v => {
 						v.Capacity = 4096;
-						conn.OnClose += () => conn.MemoryStreamMemoryStreamPool.Put(v);
+						conn.OnClose += _ => conn.MemoryStreamMemoryStreamPool.Put(v);
 					}
 				)
 			)
@@ -83,7 +83,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 			}
 		};
 
-		conn.OnClose += () => {
+		conn.OnClose += _ => {
 			conn.MemoryStreamMemoryStreamPool.Put(readTmp);
 			conn.MemoryStreamMemoryStreamPool.Put((ReusableMemoryStream)ctx.Request.Body);
 			conn.MemoryStreamMemoryStreamPool.Put((ReusableMemoryStream)ctx.Response.Body);
@@ -255,8 +255,12 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 				}
 				case MessageReadStatus.BodyOk: {
 					await HandleRequest(ctx);
-					stop = ctx.Hijacked;
-					if (stop) break;
+
+					if (ctx.HijackFunc != null) {
+						stop = true;
+						ctx.HijackFunc(conn, reader, readTmp);
+						break;
+					}
 
 					if (!ctx.KeepAlive) {
 						conn.Close();
@@ -285,6 +289,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 
 	private async Task HandleRequest(RequestCtx ctx) {
 		CancellationTokenSource? cts = null;
+		var sent = false;
 		try {
 			if (options.HandleTimeout > 0) {
 				cts = new CancellationTokenSource();
@@ -295,11 +300,22 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 
 			ctx.Response.CompressType = options.EnableCompression ? ctx.Request.Headers.AcceptedCompressType : null;
 			await handler.Handle(ctx);
+			sent = true;
 			await ctx.SendResponse(_connection!);
-			// todo keep-alive
-			ctx.Reset();
 		}
 		catch (Exception e) {
+			var exception = ExceptionHelper.UnwrapFirst(e);
+			if (!sent && exception is not SystemException) {
+				ctx.Response.Reset();
+				ctx.Response.StatusCode = (int)RfcStatusCode.InternalServerError;
+				try {
+					await ctx.SendResponse(_connection!);
+				}
+				catch {
+					// ignored
+				}
+			}
+
 			_connection!.Close(e);
 		}
 		finally {
@@ -312,8 +328,8 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 		if (exception == null) return;
 
 		switch (exception) {
-			case IOException: {
-				Console.WriteLine("Connection Lost");
+			case SystemException: {
+				Console.WriteLine("Connection Closed");
 				return;
 			}
 			default: {

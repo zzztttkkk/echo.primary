@@ -17,6 +17,7 @@ public partial class RequestCtx {
 			throw new Exception($"bad file range, end {end} > filesize {filesize}, {fileRef.Filename}");
 		}
 
+		Response.StatusCode = (int)RfcStatusCode.PartialContent;
 		Response.Headers.Set(RfcHeader.ContentRange, $"bytes {begin}-{end}/{filesize}");
 
 		await using var fs = fileRef.FileInfo.OpenRead();

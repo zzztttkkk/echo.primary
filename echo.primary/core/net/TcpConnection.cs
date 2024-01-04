@@ -18,9 +18,9 @@ public class TcpConnection(TcpServer server, Socket socket)
 	public bool IsAlive => !_closed && Socket.Connected;
 	public bool IsOverSsl => _sslStream != null;
 
-	private List<Action>? _onCloseHooks;
+	private List<Action<Exception?>>? _onCloseHooks;
 
-	public event Action OnClose {
+	public event Action<Exception?> OnClose {
 		add {
 			_onCloseHooks ??= new();
 			_onCloseHooks.Add(value);
@@ -146,7 +146,7 @@ public class TcpConnection(TcpServer server, Socket socket)
 
 		if (_onCloseHooks != null) {
 			foreach (var action in _onCloseHooks) {
-				action();
+				action(exception);
 			}
 		}
 

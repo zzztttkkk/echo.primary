@@ -8,7 +8,7 @@ namespace echo.primary.core.h2tp;
 public partial class RequestCtx {
 	internal CancellationToken? CancellationToken = null;
 	internal TcpConnection TcpConnection = null!;
-	internal bool Hijacked;
+	internal ConnHandleFunc? HijackFunc;
 
 	private readonly StringBuilder _respWriteBuf = new(1024);
 	public Request Request { get; } = new();
@@ -101,16 +101,15 @@ public partial class RequestCtx {
 		await writer.Flush();
 	}
 
-	public delegate void ConnHandleFunc(TcpConnection connection, MemoryStream tmp);
+	public delegate void ConnHandleFunc(TcpConnection connection, ExtAsyncReader reader, MemoryStream tmp);
 
-	void Hijack(ConnHandleFunc handle) {
-		if (Hijacked) throw new Exception("this http connection has been hijacked");
-		Hijacked = true;
-		handle(TcpConnection, ReadTmp);
+	void Hijack(ConnHandleFunc func) {
+		if (HijackFunc != null) throw new Exception("this http connection has been hijacked");
+		HijackFunc = func;
 	}
 
 	void Close(bool immediately = false, string msg = $"force close by {nameof(RequestCtx)}.{nameof(Close)}") {
-		if (Hijacked) throw new Exception("can not close a hijacked http connection");
+		if (HijackFunc != null) throw new Exception("can not close a hijacked http connection");
 		if (immediately) {
 			TcpConnection.Close(new Exception(msg));
 			return;

@@ -33,7 +33,7 @@ public class Message {
 	}
 }
 
-internal class FileRef(
+public class FileRef(
 	string filename,
 	Tuple<long, long>? range = null,
 	bool viaSendFile = false,
@@ -41,8 +41,8 @@ internal class FileRef(
 ) {
 	public readonly string Filename = filename;
 	public readonly FileInfo FileInfo = fileInfo ?? new(filename);
-	public readonly Tuple<long, long>? Range = range;
-	public readonly bool ViaSendFile = viaSendFile;
+	public Tuple<long, long>? Range = range;
+	public bool ViaSendFile = viaSendFile;
 }
 
 public enum BodyType {
@@ -178,10 +178,13 @@ public class Response : Message {
 		bool viaSendFile = false,
 		FileInfo? fileinfo = null
 	) {
-		if (BodyType != null) throw WrittenException;
+		WriteFile(new FileRef(path, range, viaSendFile, fileinfo));
+	}
 
+	public void WriteFile(FileRef @ref) {
+		if (BodyType != null) throw WrittenException;
 		BodyType ??= h2tp.BodyType.File;
-		FileRef = new FileRef(path, range, viaSendFile, fileinfo);
+		FileRef = @ref;
 	}
 
 	public void WriteStream(Stream stream) {

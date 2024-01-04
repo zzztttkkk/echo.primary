@@ -9,14 +9,11 @@ public class WebSocketProtocol {
 	public void Start(TcpConnection connection, MemoryStream tmp) {
 		_connection = connection;
 		_tmp = tmp;
+		_connection.OnClose += ConnectionLost;
 	}
 
 	public void Dispose() {
 		throw new NotImplementedException();
-	}
-
-	private async Task Read() {
-		while (true) { }
 	}
 
 	public void ConnectionLost(Exception? exception) {

@@ -13,7 +13,7 @@ using var host = new HostBuilder().Build();
  * rm ./*.pem
  */
 
-var opts = TomlLoader.Load<ServerOptions>("./c.toml");
+var opts = TomlLoader.Load<ServerOptions>("./example/c.toml");
 var server = new HttpServer(opts);
 
 server.Logger.AddAppender(
