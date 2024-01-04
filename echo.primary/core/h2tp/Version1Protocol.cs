@@ -47,7 +47,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 
 	private int RemainMills(ulong begin) {
 		if (options.ReadTimeout < 1) return -1;
-		var remain = options.ReadTimeout - (int)(Time.unixmills() - begin);
+		var remain = options.ReadTimeout - (int)(Time.Unixmills() - begin);
 		if (remain < 0) {
 			throw new Exception($"bad request, reach {nameof(options.ReadTimeout)}");
 		}
@@ -94,7 +94,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 		long flBytesSize = 0;
 		var headersCount = 0;
 
-		var begin = Time.unixmills();
+		var begin = Time.Unixmills();
 		var stop = false;
 
 		while (!stop) {
@@ -256,9 +256,9 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 				case MessageReadStatus.BodyOk: {
 					await HandleRequest(ctx);
 
-					if (ctx.HijackFunc != null) {
+					if (ctx.UpgradeFunc != null) {
 						stop = true;
-						ctx.HijackFunc(conn, reader, readTmp);
+						ctx.UpgradeFunc(conn, reader, readTmp);
 						break;
 					}
 
@@ -272,7 +272,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					readStatus = MessageReadStatus.None;
 					flBytesSize = 0;
 					headersCount = 0;
-					begin = Time.unixmills();
+					begin = Time.Unixmills();
 					continue;
 				}
 				default: throw new UnreachableException();

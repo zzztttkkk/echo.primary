@@ -24,11 +24,11 @@ public class ExtAsyncReader(IAsyncReader src, BytesBuffer tmp) : IAsyncReader {
 	public async Task ReadUntil(MemoryStream ms, byte target, int timeoutMills = 0, int maxBytesSize = 0) {
 		ms.Position = 0;
 
-		var begin = Time.unixmills();
+		var begin = Time.Unixmills();
 		while (true) {
 			var remainMills = -1;
 			if (timeoutMills > 0) {
-				remainMills = timeoutMills - (int)(Time.unixmills() - begin);
+				remainMills = timeoutMills - (int)(Time.Unixmills() - begin);
 				if (remainMills < 0) {
 					throw new IOException("read timeout");
 				}

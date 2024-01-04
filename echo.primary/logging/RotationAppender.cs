@@ -64,7 +64,7 @@ public class RotationAppender : IAppender {
 	}
 
 	private async Task RenameBySize() {
-		var nfn = $"{_fileBaseName}_{Time.unixnanos()}{_fileExtName}";
+		var nfn = $"{_fileBaseName}_{Time.Unixnanos()}{_fileExtName}";
 		await DoFlushReal();
 		DoRename(nfn);
 	}
@@ -74,7 +74,7 @@ public class RotationAppender : IAppender {
 		var nfn = $"{nbasefn}{_fileExtName}";
 
 		if (File.Exists($"{_directoryInfo.FullName}/{nfn}")) {
-			nfn = $"{nbasefn}.{Time.unixnanos()}{_fileExtName}";
+			nfn = $"{nbasefn}.{Time.Unixnanos()}{_fileExtName}";
 		}
 
 		await DoFlushReal();
@@ -103,9 +103,9 @@ public class RotationAppender : IAppender {
 				if (info.Exists) {
 					if (_options.ByDate) {
 						var now = DateTime.Now;
-						var begin = Time.unix(new DateTime(now.Year, now.Month, now.Day));
+						var begin = Time.Unix(new DateTime(now.Year, now.Month, now.Day));
 						var end = begin + 86399;
-						var fct = Time.unix(info.CreationTime);
+						var fct = Time.Unix(info.CreationTime);
 						if (fct < begin || fct > end) {
 							await RenameByDate(info.CreationTime);
 							continue;
