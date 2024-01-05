@@ -3,10 +3,6 @@
 public static class Log {
 	public static IRootLogger Root { get; set; } = new RootLogger("");
 
-	public static ILogger Get(string name) {
-		return Root.GetLogger(name);
-	}
-
 	public static void AddAppender(IAppender appender) => Root.AddAppender(appender);
 	public static void DelAppender(string name) => Root.DelAppender(name);
 

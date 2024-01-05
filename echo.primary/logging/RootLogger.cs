@@ -32,6 +32,8 @@ internal static class FmtHelper {
 
 public interface ILogger {
 	string Name { get; }
+	IRootLogger Root { get; }
+
 	void Trace(string msg);
 	void Debug(string msg);
 	void Info(string msg);
@@ -55,25 +57,25 @@ public interface ILogger {
 	ILogger GetLogger(string name);
 }
 
-public interface IRootLogger : IDisposable {
+public interface IRootLogger : ILogger, IDisposable {
 	void AddAppender(IAppender appender);
 	void DelAppender(string name);
 	void Flush();
 	void Close();
 
-	ILogger GetLogger(string name);
-
-	void Trace(string msg, string loggername = "");
-	void Debug(string msg, string loggername = "");
-	void Info(string msg, string loggername = "");
-	void Warn(string msg, string loggername = "");
-	void Error(string msg, string loggername = "");
-	void Fatal(string msg, string loggername = "");
+	void Trace(string msg, string loggername);
+	void Debug(string msg, string loggername);
+	void Info(string msg, string loggername);
+	void Warn(string msg, string loggername);
+	void Error(string msg, string loggername);
+	void Fatal(string msg, string loggername);
 }
 
 internal class RootLogger(string name = "Logger") : IRootLogger {
 	private List<IAppender> _appenders = new();
 	public string Name { get; set; } = name;
+
+	public IRootLogger Root => this;
 
 	private void Emit(LogItem log) {
 		foreach (var appender in _appenders.Where(e => log.Level >= e.Level)) {
@@ -109,12 +111,19 @@ internal class RootLogger(string name = "Logger") : IRootLogger {
 		_appenders = _appenders.Where(v => v.Name != name).ToList();
 	}
 
-	public void Trace(string msg, string loggername = "") => Emit(new LogItem(Level.Trace, msg, loggername));
-	public void Debug(string msg, string loggername = "") => Emit(new LogItem(Level.Debug, msg, loggername));
-	public void Info(string msg, string loggername = "") => Emit(new LogItem(Level.Info, msg, loggername));
-	public void Warn(string msg, string loggername = "") => Emit(new LogItem(Level.Warn, msg, loggername));
-	public void Error(string msg, string loggername = "") => Emit(new LogItem(Level.Error, msg, loggername));
-	public void Fatal(string msg, string loggername = "") => Emit(new LogItem(Level.Fatal, msg, loggername));
+	public void Trace(string msg, string loggername) => Emit(new LogItem(Level.Trace, msg, loggername));
+	public void Debug(string msg, string loggername) => Emit(new LogItem(Level.Debug, msg, loggername));
+	public void Info(string msg, string loggername) => Emit(new LogItem(Level.Info, msg, loggername));
+	public void Warn(string msg, string loggername) => Emit(new LogItem(Level.Warn, msg, loggername));
+	public void Error(string msg, string loggername) => Emit(new LogItem(Level.Error, msg, loggername));
+	public void Fatal(string msg, string loggername) => Emit(new LogItem(Level.Fatal, msg, loggername));
+
+	public void Trace(string msg) => Trace(msg, Name);
+	public void Debug(string msg) => Debug(msg, Name);
+	public void Info(string msg) => Info(msg, Name);
+	public void Warn(string msg) => Warn(msg, Name);
+	public void Error(string msg) => Error(msg, Name);
+	public void Fatal(string msg) => Fatal(msg, Name);
 
 	public ILogger GetLogger(string name) => new SubLogger(this, $"{Name}.{name}");
 
@@ -126,6 +135,7 @@ internal class RootLogger(string name = "Logger") : IRootLogger {
 
 internal class SubLogger(IRootLogger root, string name) : ILogger {
 	public string Name { get; } = name;
+	public IRootLogger Root => root;
 	public void Trace(string msg) => root.Trace(msg, Name);
 	public void Debug(string msg) => root.Debug(msg, Name);
 	public void Info(string msg) => root.Info(msg, Name);

@@ -12,7 +12,7 @@ public class LoggingTest {
 			new RotationOptions(filename: "./logs/v.log", bysize: 8092)
 		));
 
-		var logger = Log.Get("A");
+		var logger = Log.Root.GetLogger("A");
 
 		var i = 0;
 		var c = 0;
@@ -49,7 +49,7 @@ public class LoggingTest {
 			}
 		));
 
-		var a = Log.Get("A");
+		var a = Log.Root.GetLogger("A");
 		a.Error("xxx");
 
 		var b = a.GetLogger("B");

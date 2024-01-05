@@ -14,7 +14,7 @@ public class TcpServer(TcpSocketOptions socketOptions, string name = "TcpServer"
 
 	public string Name { get; set; } = name;
 
-	public ILogger Logger { get; set; } = Log.Get(name);
+	public ILogger Logger { get; set; } = Log.Root.GetLogger(name);
 
 	internal readonly ThreadLocalPool<ReusableMemoryStream> MemoryStreamPool = new(
 		() => new ReusableMemoryStream(
