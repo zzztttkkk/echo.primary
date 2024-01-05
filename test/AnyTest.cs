@@ -1,4 +1,5 @@
-﻿using echo.primary.utils;
+﻿using System.Runtime.InteropServices;
+using echo.primary.utils;
 
 namespace test;
 
@@ -19,10 +20,18 @@ public class AnyTest {
 		Console.WriteLine("OK");
 	}
 
+	private static void PrintAddress(object obj) {
+		var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+		var ptr = GCHandle.ToIntPtr(handle);
+		Console.WriteLine($"0x{ptr:X}");
+	}
+
 	[Test]
 	public void Any() {
-		var now = DateTime.Now;
-		Console.WriteLine(now.ToString("R"));
-		Console.WriteLine(DateTime.ParseExact(now.ToString("R"), format: "R", provider: null).ToString("R"));
+		var a = "xxxx";
+		var b = a;
+
+		PrintAddress(a);
+		PrintAddress(b);
 	}
 }

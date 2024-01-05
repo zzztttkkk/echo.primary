@@ -1,9 +1,9 @@
 ﻿namespace echo.primary.logging;
 
-public record LogItem(
-	Level level,
-	string msg,
-	DateTime time,
-	List<object>? args = null,
-	string action = ""
-);
+public class LogItem(Level level, string msg, string loggername) {
+	public readonly DateTime Time = DateTime.Now;
+	public readonly Level Level = level;
+	public readonly string Message = msg;
+
+	public string LoggerName { get; set; } = loggername;
+}

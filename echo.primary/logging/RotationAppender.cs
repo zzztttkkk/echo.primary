@@ -4,16 +4,19 @@ using echo.primary.utils;
 
 namespace echo.primary.logging;
 
-public class RotationOptions(string FileName = "", long BySize = 0, bool ByDate = false, int BufferSize = 4096) {
-	public string FileName { get; set; } = FileName;
-	public long BySize { get; set; } = BySize;
-	public bool ByDate { get; set; } = ByDate;
-	public int BufferSize { get; set; } = BufferSize;
+public class RotationOptions(string filename = "", long bysize = 0, bool bydate = false) {
+	[Toml(Aliases = new[] { "file" })] public string FileName { get; set; } = filename;
+
+	[Toml(Optional = true)] public long BySize { get; set; } = bysize;
+	[Toml(Optional = true)] public bool ByDate { get; set; } = bydate;
+
+	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
+	public int BufferSize { get; set; } = 4096;
 }
 
 public class RotationAppender : IAppender {
 	private readonly RotationOptions _options;
-	public Level Level { get; set; } = Level.TRACE;
+	public Level Level { get; set; } = Level.Trace;
 	public string Name { get; set; } = "";
 	public IRenderer Renderer { get; set; } = new SimpleLineRenderer();
 
@@ -34,8 +37,8 @@ public class RotationAppender : IAppender {
 	private readonly StringBuilder _tmp;
 	private Exception? _writeException;
 
-	public RotationAppender(RotationOptions opts) {
-		_options = opts;
+	public RotationAppender(RotationOptions? opts = null) {
+		_options = opts ?? new RotationOptions();
 		if (_options is { ByDate: false, BySize: < 1 } or { ByDate: true, BySize: > 1 }) {
 			throw new Exception("ByDate or BySize all true or all false");
 		}
@@ -59,7 +62,7 @@ public class RotationAppender : IAppender {
 	}
 
 	private Task Write(LogItem log) {
-		Renderer.Render(_tmp, Name, log);
+		Renderer.Render(_tmp, log);
 		return _tmp.Length < _options.BufferSize ? Task.CompletedTask : WriteTmpToFile();
 	}
 
@@ -160,11 +163,11 @@ public class RotationAppender : IAppender {
 			try {
 				var log = await _channel.Reader.ReadAsync(_readCts.Token);
 				if (_options.ByDate) {
-					if (prevTime != null && log.time.Day != prevTime.Value.Day) {
+					if (prevTime != null && log.Time.Day != prevTime.Value.Day) {
 						await RenameByDate(prevTime.Value);
 					}
 
-					prevTime = log.time;
+					prevTime = log.Time;
 				}
 
 				await Write(log);

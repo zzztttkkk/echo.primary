@@ -12,7 +12,7 @@ public class TcpConnection(TcpServer server, Socket socket)
 	private bool _closed;
 	private ITcpProtocol? _protocol;
 	private BufferedStream? _stream;
-	public Logger Logger => server.Logger;
+	public ILogger Logger => server.Logger;
 	public Socket Socket { get; } = socket;
 	public ThreadLocalPool<ReusableMemoryStream> MemoryStreamMemoryStreamPool => server.MemoryStreamPool;
 	public bool IsAlive => !_closed && Socket.Connected;

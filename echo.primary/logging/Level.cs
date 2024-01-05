@@ -1,10 +1,10 @@
 ﻿namespace echo.primary.logging;
 
 public enum Level {
-	TRACE = 0,
-	DEBUG = 10,
-	INFO = 20,
-	WARN = 30,
-	ERROR = 40,
-	FATAL = 50,
+	Trace = 0,
+	Debug = 10,
+	Info = 20,
+	Warn = 30,
+	Error = 40,
+	Fatal = 50,
 }

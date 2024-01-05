@@ -6,22 +6,22 @@ using echo.primary.utils;
 namespace test;
 
 class Point {
-	public int X { get; set; }
-	public int Y { get; set; }
-	public string Name { get; set; }
+	public int X { get; set; } = 0;
+	public int Y { get; set; } = 0;
+	public string Name { get; set; } = "";
 }
 
 class Foo {
 	[Toml(ParserType = typeof(TomlParsers.ColorParser))]
-	public Color Color { get; set; }
+	public Color Color { get; set; } = Color.Black;
 
 	[Toml(ParserType = typeof(TomlParsers.ByteSizeParser))]
-	public int SizeA { get; set; }
+	public int SizeA { get; set; } = 0;
 
 	[Toml(ParserType = typeof(TomlParsers.DurationParser))]
-	public TimeSpan MaxAliveDuration { get; set; }
+	public TimeSpan MaxAliveDuration { get; set; } = new(0);
 
-	public List<Point> Points { get; set; }
+	public List<Point> Points { get; set; } = null!;
 }
 
 public class TomlLoaderTest {

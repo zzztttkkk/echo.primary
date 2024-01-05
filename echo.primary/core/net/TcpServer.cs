@@ -14,7 +14,7 @@ public class TcpServer(TcpSocketOptions socketOptions, string name = "TcpServer"
 
 	public string Name { get; set; } = name;
 
-	public Logger Logger { get; set; } = new(name);
+	public ILogger Logger { get; set; } = Log.Get(name);
 
 	internal readonly ThreadLocalPool<ReusableMemoryStream> MemoryStreamPool = new(
 		() => new ReusableMemoryStream(
@@ -140,9 +140,6 @@ public class TcpServer(TcpSocketOptions socketOptions, string name = "TcpServer"
 		foreach (var val in _beforeTcpServerShutdownHandlers) {
 			val();
 		}
-
-		Logger.Flush();
-		Logger.Close();
 
 		try {
 			_sock.Close();

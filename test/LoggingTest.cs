@@ -8,12 +8,11 @@ public class LoggingTest {
 	public void TestRotationAppender() {
 		Console.WriteLine($"{Environment.CurrentDirectory}");
 
-		var logger =
-			new Logger().AddAppender(
-				new RotationAppender(
-					new RotationOptions(FileName: "./logs/v.log", BySize: 8092)
-				)
-			);
+		Log.AddAppender(new RotationAppender(
+			new RotationOptions(filename: "./logs/v.log", bysize: 8092)
+		));
+
+		var logger = Log.Get("A");
 
 		var i = 0;
 		var c = 0;
@@ -22,38 +21,38 @@ public class LoggingTest {
 			i++;
 			if (i < 10000) continue;
 			i = 0;
-			logger.Flush();
+			Log.Flush();
 			c++;
 			if (c >= 10) {
 				break;
 			}
 		}
 
-		logger.Close();
+		Log.Close();
 	}
 
 
 	[Test]
 	public void TestColorful() {
-		var logger =
-			new Logger().AddAppender(
-				new ColorfulConsoleAppender(
-					"ColorfulAppender",
-					Level.TRACE,
-					new() {
-						{
-							Level.ERROR, new ColorSchema(
-								Time: Color.DarkRed,
-								Level: Color.Red,
-								Message: Color.Black
-							)
-						}
-					}
-				)
-			);
+		Log.AddAppender(new ColorfulConsoleAppender(
+			"ColorfulConsole",
+			Level.Trace,
+			new() {
+				{
+					Level.Error, new ColorSchema(
+						name: Color.Indigo,
+						time: Color.DarkRed,
+						level: Color.Red,
+						message: Color.DodgerBlue
+					)
+				}
+			}
+		));
 
-		logger.Error("0.0");
+		var a = Log.Get("A");
+		a.Error("xxx");
 
-		logger.Close();
+		var b = a.GetLogger("B");
+		b.Error(new Dictionary<string, object> { { "name", "xxx" } });
 	}
 }

@@ -16,12 +16,12 @@ using var host = new HostBuilder().Build();
 var opts = TomlLoader.Load<ServerOptions>("./example/c.toml");
 var server = new HttpServer(opts);
 
-server.Logger.AddAppender(
+Log.AddAppender(
 	new ColorfulConsoleAppender(
 		"Console",
-		schemas: new Dictionary<Level, ColorSchema>() {
+		schemas: new Dictionary<Level, ColorSchema> {
 			{
-				Level.INFO, new ColorSchema(Level: Color.Green, Message: Color.Green)
+				Level.Info, new ColorSchema(level: Color.Green, message: Color.Green)
 			}
 		}
 	)
@@ -33,7 +33,10 @@ var handler = new FsHandler(opts.FsOptions);
 
 lifetime.ApplicationStarted.Register(() => { _ = server.Start(handler); });
 
-lifetime.ApplicationStopping.Register(() => { server.Stop(); });
+lifetime.ApplicationStopping.Register(() => {
+	server.Stop();
+	Log.Close();
+});
 
 host.Start();
 host.WaitForShutdown();

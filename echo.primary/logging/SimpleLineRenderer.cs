@@ -1,55 +1,35 @@
 ﻿using System.Drawing;
 using System.Text;
+using echo.primary.utils;
 
 namespace echo.primary.logging;
 
 public class SimpleLineRenderer : IRenderer {
 	public string TimeLayout { get; set; } = "yyyy-MM-dd HH:mm:ss.fff/z";
 
-	public void Render(StringBuilder builder, string name, LogItem log) {
+	public void Render(StringBuilder builder, LogItem log) {
 		// loggerName
-		if (!string.IsNullOrEmpty(name)) {
-			builder.Append($"[{name}] ");
-		}
+		builder.Append($"[{log.LoggerName}] ");
 
 		// time
-		builder.Append($"[{log.time.ToString(TimeLayout)}] ");
+		builder.Append($"[{log.Time.ToString(TimeLayout)}] ");
 
 		// level
-		builder.Append($"[{log.level}] ");
-
-		// action.path
-		if (!string.IsNullOrEmpty(log.action)) {
-			builder.Append($"[{log.action}.");
-		}
+		builder.Append($"[{log.Level}] ");
 
 		// message
-		builder.Append(log.msg);
-
-		if (log.args is { Count: > 0 }) {
-			builder.Append(" [Args: ");
-			foreach (var obj in log.args) {
-				builder.Append(obj);
-				builder.Append(',');
-			}
-
-			builder.Append(" ]");
-		}
+		builder.Append(log.Message);
 
 		builder.Append('\n');
 	}
 }
 
-public record ColorSchema(
-	Color? Name = null,
-	Color? Time = null,
-	Color? Level = null,
-	Color? Action = null,
-	Color? Message = null,
-	Color? ArgsTitle = null,
-	Color? ArgsValue = null,
-	Color? ArgsSep = null
-);
+public class ColorSchema(Color? name = null, Color? time = null, Color? level = null, Color? message = null) {
+	[Toml(Optional = true)] public Color? Name { get; set; } = name;
+	[Toml(Optional = true)] public Color? Time { get; set; } = time;
+	[Toml(Optional = true)] public Color? Level { get; set; } = level;
+	[Toml(Optional = true)] public Color? Message { get; set; } = message;
+}
 
 internal class ColorfulSimpleLineRenderer(Dictionary<Level, ColorSchema> schemas) : IRenderer {
 	public string TimeLayout { get; set; } = "yyyy-MM-dd HH:mm:ss.fff/z";
@@ -66,42 +46,20 @@ internal class ColorfulSimpleLineRenderer(Dictionary<Level, ColorSchema> schemas
 		builder.Append("\x1b[0m");
 	}
 
-	public void Render(StringBuilder builder, string name, LogItem log) {
-		ColorSchemas.TryGetValue(log.level, out var schema);
-		schema ??= new ColorSchema();
+	public void Render(StringBuilder builder, LogItem log) {
+		ColorSchemas.TryGetValue(log.Level, out var schema);
 
 		// loggerName
-		if (!string.IsNullOrEmpty(name)) {
-			WithColor(builder, $"[{name}] ", schema.Name);
-		}
+		WithColor(builder, $"[{log.LoggerName}] ", schema?.Name);
 
 		// time
-		WithColor(builder, $"[{log.time.ToString(TimeLayout)}] ", schema.Time);
+		WithColor(builder, $"[{log.Time.ToString(TimeLayout)}] ", schema?.Time);
 
 		// level
-		WithColor(builder, $"[{log.level}] ", schema.Level);
-
-		// action
-		if (!string.IsNullOrEmpty(log.action)) {
-			WithColor(builder, $"[{log.action}.", schema.Action);
-		}
+		WithColor(builder, $"[{log.Level}] ", schema?.Level);
 
 		// message
-		WithColor(builder, log.msg, schema.Message);
-
-		if (log.args is { Count: > 0 }) {
-			WithColor(builder, " [Args: ", schema.ArgsTitle);
-			foreach (var obj in log.args) {
-				WithColor(
-					builder,
-					obj.ToString() ?? $"{obj.GetType().Name}<{obj.GetHashCode()}>",
-					schema.ArgsValue
-				);
-				WithColor(builder, ",", schema.ArgsSep);
-			}
-
-			WithColor(builder, "] ", schema.ArgsTitle);
-		}
+		WithColor(builder, log.Message, schema?.Message);
 
 		builder.Append('\n');
 	}

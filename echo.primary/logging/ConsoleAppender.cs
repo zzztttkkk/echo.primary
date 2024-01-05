@@ -2,18 +2,18 @@
 
 namespace echo.primary.logging;
 
-public class ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? renderer = null) : IAppender {
+public class ConsoleAppender(string name, Level level = Level.Trace, IRenderer? renderer = null) : IAppender {
 	public Level Level { get; } = level;
 	public string Name { get; set; } = name;
 	public IRenderer Renderer { get; } = renderer ?? new SimpleLineRenderer();
 
-	private readonly StringBuilder sb = new();
+	private readonly StringBuilder _sb = new();
 
 	public void Append(LogItem log) {
-		lock (sb) {
-			Renderer.Render(sb, Name, log);
-			Console.Write(sb.ToString());
-			sb.Clear();
+		lock (_sb) {
+			Renderer.Render(_sb, log);
+			Console.Write(_sb.ToString());
+			_sb.Clear();
 		}
 	}
 
@@ -28,7 +28,7 @@ public class ConsoleAppender(string name, Level level = Level.TRACE, IRenderer? 
 
 public class ColorfulConsoleAppender(
 	string name,
-	Level level = Level.TRACE,
+	Level level = Level.Trace,
 	Dictionary<Level, ColorSchema>? schemas = null
 ) : ConsoleAppender(
 	name,
