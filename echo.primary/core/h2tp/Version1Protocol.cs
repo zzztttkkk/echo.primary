@@ -134,6 +134,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					req.Flps[1] = Encoding.Latin1.GetString(
 						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
 					);
+
 					if (string.IsNullOrEmpty(req.Flps[1])) {
 						req.Flps[1] = "/";
 					}

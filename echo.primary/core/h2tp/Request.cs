@@ -1,6 +1,4 @@
-﻿using System.Web;
-
-namespace echo.primary.core.h2tp;
+﻿namespace echo.primary.core.h2tp;
 
 public class Request : Message {
 	public string Method {
@@ -10,7 +8,7 @@ public class Request : Message {
 
 	private int? _qidx;
 
-	private int QIdx {
+	private int QuestionMarkIdx {
 		get {
 			if (_qidx != null) return _qidx.Value;
 			_qidx = Flps[1].IndexOf('?');
@@ -28,8 +26,8 @@ public class Request : Message {
 		}
 	}
 
-	public ReadOnlySpan<char> Path => QIdx < 0 ? Flps[1].AsSpan() : Flps[1].AsSpan()[..QIdx];
-	public ReadOnlySpan<char> QueryString => QIdx < 0 ? "" : Flps[1].AsSpan()[(QIdx + 1)..];
+	public ReadOnlySpan<char> Path => QuestionMarkIdx < 0 ? Flps[1].AsSpan() : Flps[1].AsSpan()[..QuestionMarkIdx];
+	public ReadOnlySpan<char> QueryString => QuestionMarkIdx < 0 ? "" : Flps[1].AsSpan()[(QuestionMarkIdx + 1)..];
 
 	private readonly MultiMap _query = new();
 	private bool _queryParsed;
