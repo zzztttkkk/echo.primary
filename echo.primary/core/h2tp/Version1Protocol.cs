@@ -116,6 +116,7 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					req.Flps[0] = Encoding.Latin1.GetString(
 						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
 					).ToUpper();
+
 					flBytesSize += readTmp.Position;
 					readStatus = MessageReadStatus.Fl1Ok;
 					break;
@@ -132,10 +133,16 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						break;
 					}
 
+					flBytesSize += readTmp.Position;
+					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
+						CloseWithException(
+							$"bad request, reach {nameof(options.MaxFirstLineBytesSize)}"
+						);
+						break;
+					}
+
 					var (uri, exc) = Uri.Parse(
-						Encoding.Latin1.GetString(
-							readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
-						),
+						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]),
 						AllowAuthority: ctx.Request.IsConnect
 					);
 					if (exc != null) {
@@ -144,14 +151,6 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					}
 
 					ctx.Request.InnerUri = uri;
-
-					flBytesSize += readTmp.Position;
-					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {
-						CloseWithException(
-							$"bad request, reach {nameof(options.MaxFirstLineBytesSize)}"
-						);
-						break;
-					}
 
 					readStatus = MessageReadStatus.Fl2Ok;
 					break;
