@@ -196,13 +196,13 @@ public class FsHandler(FsOptions opts) : IHandler {
 	}
 
 	public async Task Handle(RequestCtx ctx) {
-		var path = ctx.Request.Path.ToString();
-		if (!path.StartsWith(opts.Prefix)) {
+		var path = ctx.Request.Uri.Path;
+		if (string.IsNullOrEmpty(path) || !path.StartsWith(opts.Prefix)) {
 			ctx.Response.StatusCode = (int)RfcStatusCode.NotFound;
 			return;
 		}
 
-		path = ctx.Request.Path.ToString()[opts.Prefix.Length..];
+		path = path[opts.Prefix.Length..];
 
 		// todo more safe
 		path = path.Replace("..", "").Replace("~", "");

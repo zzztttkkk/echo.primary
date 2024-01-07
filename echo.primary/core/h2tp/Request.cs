@@ -1,4 +1,6 @@
-﻿namespace echo.primary.core.h2tp;
+﻿using Uri = echo.primary.utils.Uri;
+
+namespace echo.primary.core.h2tp;
 
 public class Request : Message {
 	public string Method {
@@ -6,60 +8,16 @@ public class Request : Message {
 		set => Flps[0] = value;
 	}
 
-	private int? _qidx;
+	internal Uri? InnerUri;
 
-	private int QuestionMarkIdx {
+	public Uri Uri {
 		get {
-			if (_qidx != null) return _qidx.Value;
-			_qidx = Flps[1].IndexOf('?');
-			return _qidx.Value;
-		}
-	}
+			if (InnerUri != null) return InnerUri;
 
-	public string RawPath {
-		get => Flps[1];
-		set {
-			Flps[1] = value;
-			_qidx = null;
-			_query.Clear();
-			_queryParsed = false;
-		}
-	}
-
-	public ReadOnlySpan<char> Path => QuestionMarkIdx < 0 ? Flps[1].AsSpan() : Flps[1].AsSpan()[..QuestionMarkIdx];
-	public ReadOnlySpan<char> QueryString => QuestionMarkIdx < 0 ? "" : Flps[1].AsSpan()[(QuestionMarkIdx + 1)..];
-
-	private readonly MultiMap _query = new();
-	private bool _queryParsed;
-
-	public MultiMap QueryParams {
-		get {
-			if (_queryParsed) return _query;
-			_queryParsed = true;
-
-			var tmp = QueryString;
-			while (true) {
-				var idx = tmp.IndexOf('&');
-				if (idx < 0) {
-					ParsePair(tmp);
-					break;
-				}
-
-				ParsePair(tmp[..idx]);
-				tmp = tmp[(idx + 1)..];
-			}
-
-			return _query;
-
-			void ParsePair(ReadOnlySpan<char> txt) {
-				var idx = txt.IndexOf('=');
-				if (idx < 0) {
-					_query.Add(Helper.UrlDecode(txt), "");
-				}
-				else {
-					_query.Add(Helper.UrlDecode(txt[..idx]), Helper.UrlDecode(txt[(idx + 1)..]));
-				}
-			}
+			var (v, e) = Uri.Parse(Flps[1]);
+			if (e != null) throw e;
+			InnerUri = v!;
+			return InnerUri;
 		}
 	}
 

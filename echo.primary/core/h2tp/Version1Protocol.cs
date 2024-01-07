@@ -3,6 +3,7 @@ using System.Text;
 using echo.primary.core.io;
 using echo.primary.core.net;
 using echo.primary.utils;
+using Uri = echo.primary.utils.Uri;
 
 namespace echo.primary.core.h2tp;
 
@@ -131,13 +132,18 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						break;
 					}
 
-					req.Flps[1] = Encoding.Latin1.GetString(
-						readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
+					var (uri, exc) = Uri.Parse(
+						Encoding.Latin1.GetString(
+							readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]
+						),
+						AllowAuthority: ctx.Request.IsConnect
 					);
-
-					if (string.IsNullOrEmpty(req.Flps[1])) {
-						req.Flps[1] = "/";
+					if (exc != null) {
+						CloseWithException(exc.Message);
+						break;
 					}
+
+					ctx.Request.InnerUri = uri;
 
 					flBytesSize += readTmp.Position;
 					if (options.MaxFirstLineBytesSize > 0 && flBytesSize >= options.MaxFirstLineBytesSize) {

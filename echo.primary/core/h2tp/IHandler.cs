@@ -9,7 +9,6 @@ public interface IHandler {
 public class HelloWorldHandler : IHandler {
 	public Task Handle(RequestCtx ctx) {
 		ctx.Response.NoCompression = true;
-		Console.WriteLine($"{ctx.Request.QueryParams}");
 		ctx.Response.Write("Hello World\r\n");
 		return Task.CompletedTask;
 	}

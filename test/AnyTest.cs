@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using echo.primary.utils;
+﻿using echo.primary.utils;
+using Uri = echo.primary.utils.Uri;
 
 namespace test;
 
@@ -20,18 +20,8 @@ public class AnyTest {
 		Console.WriteLine("OK");
 	}
 
-	private static void PrintAddress(object obj) {
-		var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-		var ptr = GCHandle.ToIntPtr(handle);
-		Console.WriteLine($"0x{ptr:X}");
-	}
-
 	[Test]
 	public void Any() {
-		var a = "xxxx";
-		var b = a;
-
-		PrintAddress(a);
-		PrintAddress(b);
+		Console.WriteLine(Uri.Parse(""));
 	}
 }
