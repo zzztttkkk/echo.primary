@@ -3,6 +3,8 @@
 namespace echo.primary.core.h2tp;
 
 public class Request : Message {
+	internal Stream? CompressionStream;
+
 	public string Method {
 		get => Flps[0];
 		set => Flps[0] = value;
@@ -41,5 +43,7 @@ public class Request : Message {
 
 	internal new void Reset() {
 		base.Reset();
+		CompressionStream?.Dispose();
+		CompressionStream = null;
 	}
 }

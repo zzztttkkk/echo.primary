@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
 using echo.primary.core.io;
 using echo.primary.core.net;
@@ -28,6 +29,8 @@ public class HttpOptions {
 
 	[Toml(Optional = true, Aliases = new[] { "compression" })]
 	public bool EnableCompression { get; set; } = false;
+
+	[Toml(Optional = true)] public bool AllowRequestCompression { get; set; } = false;
 
 	[Toml(Optional = true, ParserType = typeof(TomlParsers.ByteSizeParser))]
 	public int StreamReadBufferSize { get; set; } = 4096;
@@ -275,6 +278,36 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 					break;
 				}
 				case MessageReadStatus.BodyOk: {
+					if (options.AllowRequestCompression) {
+						var encoding = req.Headers.GetFirst(RfcHeader.ContentEncoding);
+						if (encoding != null) {
+							switch (encoding) {
+								case "gzip": {
+									req.CompressionStream = new GZipStream(
+										req.Body, CompressionLevel.Optimal, leaveOpen: true
+									);
+									break;
+								}
+								case "br": {
+									req.CompressionStream = new BrotliStream(
+										req.Body, CompressionLevel.Optimal, leaveOpen: true
+									);
+									break;
+								}
+								case "deflate": {
+									req.CompressionStream = new DeflateStream(
+										req.Body, CompressionLevel.Optimal, leaveOpen: true
+									);
+									break;
+								}
+								default: {
+									CloseWithException($"unsupported content encoding: {encoding}");
+									break;
+								}
+							}
+						}
+					}
+
 					await HandleRequest(ctx);
 
 					if (ctx.UpgradeFunc != null) {

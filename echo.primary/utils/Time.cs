@@ -11,4 +11,6 @@ public static class Time {
 
 	public static ulong Unix(DateTime? v = null) =>
 		(ulong)(v?.ToUniversalTime() ?? DateTime.UtcNow).Subtract(Zero).TotalSeconds;
+
+	public static DateTime TruncateSecond(DateTime v) => new(v.Year, v.Month, v.Day, v.Hour, v.Minute, v.Second);
 }

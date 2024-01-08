@@ -16,7 +16,7 @@ public partial class RequestCtx {
 
 	private static readonly ReadOnlyMemory<byte> NewLine = "\r\n"u8.ToArray();
 	private static readonly ReadOnlyMemory<byte> ChunkedEnding = "0\r\n\r\n"u8.ToArray();
-	public bool IsCancellationRequested => CancellationToken is { IsCancellationRequested: true };
+	public bool IsCanceled => CancellationToken is { IsCancellationRequested: true };
 
 	internal void Reset() {
 		Request.Reset();
@@ -39,7 +39,7 @@ public partial class RequestCtx {
 		}
 	}
 
-	private async Task SendResponseHeader(IAsyncWriter writer) {
+	private async Task SendHeader(IAsyncWriter writer) {
 		var version = string.IsNullOrEmpty(Response.Flps[0]) ? "HTTP/1.1" : Response.Flps[0];
 		var code = string.IsNullOrEmpty(Response.Flps[1]) ? "200" : Response.Flps[1];
 		var txt = string.IsNullOrEmpty(Response.Flps[2]) ? "OK" : Response.Flps[2];
@@ -59,10 +59,12 @@ public partial class RequestCtx {
 		await writer.Write(Encoding.Latin1.GetBytes(_respWriteBuf.ToString()));
 	}
 
-	private partial Task SendFileRefResponse(IAsyncWriter writer);
+
+	private partial Task SendFileRef(IAsyncWriter writer);
+	private partial Task SendStream(IAsyncWriter writer, Stream stream);
 
 	internal async Task SendResponse(IAsyncWriter writer) {
-		if (IsCancellationRequested) return;
+		if (IsCanceled) return;
 
 		if (Response.BodyType != BodyType.None && string.IsNullOrEmpty(Response.Headers.ContentType)) {
 			Response.Headers.ContentType = Response.BodyType switch {
@@ -76,13 +78,13 @@ public partial class RequestCtx {
 
 		if (Response.FileRef != null) {
 			Response.EnsureWriteStream();
-			await SendFileRefResponse(writer);
+			await SendFileRef(writer);
 			return;
 		}
 
 		if (Response.Stream != null) {
 			Response.EnsureWriteStream();
-			await SendChunkedStreamResponse(writer, Response.Stream);
+			await SendStream(writer, Response.Stream);
 			return;
 		}
 
@@ -92,7 +94,7 @@ public partial class RequestCtx {
 
 		Response.Headers.ContentLength = Response.Body.Position;
 
-		await SendResponseHeader(writer);
+		await SendHeader(writer);
 
 		if (Response.Body.Position > 0) {
 			await writer.Write(Response.BodyBuffer);

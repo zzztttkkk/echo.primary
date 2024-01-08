@@ -137,17 +137,17 @@ public class FsHandler(FsOptions opts) : IHandler {
 		return false;
 	}
 
-	private async Task<bool> CacheHit(RequestCtx ctx, FileSystemInfo info, string? etag) {
+	private async Task<int?> CacheHit(RequestCtx ctx, FileSystemInfo info, string? etag) {
 		if (!string.IsNullOrEmpty(etag)) {
-			var cliEtag = ctx.Request.Headers.GetFirst(RfcHeader.IfNoneMatch);
-			if (!string.IsNullOrEmpty(cliEtag) && cliEtag != "*" && await ETagEqual(cliEtag, etag)) {
-				return true;
+			var cliSideEtag = ctx.Request.Headers.GetFirst(RfcHeader.IfNoneMatch);
+			if (!string.IsNullOrEmpty(cliSideEtag) && cliSideEtag != "*" && await ETagEqual(cliSideEtag, etag)) {
+				return (int)RfcStatusCode.NotModified;
 			}
 		}
 
-		var lwt = info.LastWriteTime;
+		var lwt = Time.TruncateSecond(info.LastWriteTime);
 		var cliTimeString = ctx.Request.Headers.GetLast(RfcHeader.IfModifiedSince);
-		if (string.IsNullOrEmpty(cliTimeString)) return false;
+		if (string.IsNullOrEmpty(cliTimeString)) return null;
 		if (
 			!DateTime.TryParseExact(
 				cliTimeString,
@@ -156,13 +156,15 @@ public class FsHandler(FsOptions opts) : IHandler {
 				out var cliTime
 			)
 		) {
-			return false;
+			return (int)RfcStatusCode.PreconditionFailed;
 		}
 
-		return (long)lwt.Subtract(cliTime).TotalSeconds <= 0;
+		return lwt.Ticks <= cliTime.Ticks
+			? (int)RfcStatusCode.NotModified
+			: (int)RfcStatusCode.PreconditionFailed;
 	}
 
-	private static Tuple<long, long>? ParseFirstRange(string txt, long filesize) {
+	private static Tuple<long, long>? ParseRanges(string txt, long filesize) {
 		var view = txt.AsSpan().Trim();
 		if (!view.StartsWith("bytes=")) return null;
 		view = view[7..];
@@ -203,13 +205,19 @@ public class FsHandler(FsOptions opts) : IHandler {
 		}
 
 		path = path[opts.Prefix.Length..];
-
-		// todo more safe
-		path = path.Replace("..", "").Replace("~", "");
+		if (path.Contains("..") || path.Contains('~')) {
+			ctx.Response.StatusCode = (int)RfcStatusCode.Forbidden;
+			return;
+		}
 
 		path = $"{_root.FullName}{path}";
-		FileSystemInfo filesysinfo =
-			path.EndsWith('/') || path.EndsWith('\\') ? new DirectoryInfo(path) : new FileInfo(path);
+		FileSystemInfo filesysinfo;
+		if (path.EndsWith('/') || path.EndsWith('\\')) {
+			filesysinfo = new DirectoryInfo(path);
+		}
+		else {
+			filesysinfo = new FileInfo(path);
+		}
 
 		if (!await Task.Run(() => filesysinfo.Exists)) {
 			ctx.Response.StatusCode = (int)RfcStatusCode.NotFound;
@@ -240,9 +248,12 @@ public class FsHandler(FsOptions opts) : IHandler {
 
 		ctx.Response.Headers.Set(RfcHeader.CacheControl, $"max-age={opts.CacheMaxAgeSeconds}");
 
-		if (acceptCache && await CacheHit(ctx, filesysinfo, etag)) {
-			ctx.Response.StatusCode = (int)RfcStatusCode.NotModified;
-			return;
+		if (acceptCache) {
+			var cond = await CacheHit(ctx, filesysinfo, etag);
+			if (cond.HasValue) {
+				ctx.Response.StatusCode = cond.Value;
+				return;
+			}
 		}
 
 		if ((filesysinfo.Attributes & FileAttributes.Directory) != 0) {
@@ -252,37 +263,18 @@ public class FsHandler(FsOptions opts) : IHandler {
 		}
 
 		var fileinfo = (FileInfo)filesysinfo;
-		var reqrange = ctx.Request.Headers.GetFirst(RfcHeader.Range);
-		Tuple<long, long>? range = null;
-		if (!string.IsNullOrEmpty(reqrange)) {
-			range = ParseFirstRange(reqrange, fileinfo.Length);
-			if (range == null) {
-				ctx.Response.StatusCode = (int)RfcStatusCode.BadRequest;
-				return;
-			}
-		}
-
-		if (range == null && opts.MinRangeFileSize > 0 && fileinfo.Length > opts.MinRangeFileSize) {
-			range = new(0, 4096);
-		}
-
 		var fref = new FileRef(filesysinfo.FullName);
-		if (range != null) {
-			fref.Range = range;
-		}
-		else {
-			ctx.Response.NoCompression = fileinfo.Length <= 4096;
-			if (
-				opts.PreferZeroCopy &&
-				(
-					opts.MaxZeroCopyFileSize < 1
-					||
-					fileinfo.Length <= opts.MaxZeroCopyFileSize
-				)
-			) {
-				ctx.Response.NoCompression = true;
-				fref.ViaSendFile = true;
-			}
+		ctx.Response.NoCompression = fileinfo.Length <= 4096;
+		if (
+			opts.PreferZeroCopy &&
+			(
+				opts.MaxZeroCopyFileSize < 1
+				||
+				fileinfo.Length <= opts.MaxZeroCopyFileSize
+			)
+		) {
+			ctx.Response.NoCompression = true;
+			fref.ViaSendFile = true;
 		}
 
 		ctx.Response.WriteFile(fref);
