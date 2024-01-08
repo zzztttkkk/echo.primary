@@ -91,7 +91,7 @@ public partial class RequestCtx {
 	}
 
 	private async partial Task SendFileRef(IAsyncWriter writer) {
-		var fileRef = Response.FileRef!;
+		var fileRef = (FileRef)Response.BodyRef.Value!;
 		var filesize = fileRef.FileInfo.Length;
 
 		if (fileRef.ViaSendFile) {

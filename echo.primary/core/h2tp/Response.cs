@@ -5,12 +5,24 @@ using System.Text.Json;
 
 namespace echo.primary.core.h2tp;
 
+internal class ResponseBodyRef {
+	internal BodyType BodyType = BodyType.None;
+	internal object? Value;
+
+	internal void Clear() {
+		if (BodyType == BodyType.Stream && Value != null) {
+			((Stream)Value).Dispose();
+		}
+
+		BodyType = BodyType.None;
+		Value = null;
+	}
+}
+
 public class Response : Message {
-	internal FileRef? FileRef;
-	internal Stream? CompressStream;
+	internal readonly ResponseBodyRef BodyRef = new();
 	internal CompressType? CompressType;
-	internal BodyType? BodyType;
-	internal Stream? Stream;
+	internal Stream? CompressStream;
 	public bool NoCompression { get; set; }
 
 	public int StatusCode {
@@ -55,14 +67,10 @@ public class Response : Message {
 	}
 
 	private void ResetBodyInternal() {
-		BodyType = null;
 		NoCompression = false;
 		CompressStream?.Dispose();
 		CompressStream = null;
-		Stream?.Close();
-		Stream?.Dispose();
-		Stream = null;
-		FileRef = null;
+		BodyRef.Clear();
 	}
 
 	public void ResetBody() {
@@ -91,11 +99,11 @@ public class Response : Message {
 	);
 
 	public void Write(ReadOnlySpan<byte> buf) {
-		if (BodyType != null && BodyType != h2tp.BodyType.Binary) {
+		if (BodyRef.BodyType != BodyType.Binary) {
 			throw WrittenException;
 		}
 
-		BodyType ??= h2tp.BodyType.Binary;
+		BodyRef.BodyType = BodyType.Binary;
 		WriteBytes(buf);
 	}
 
@@ -105,44 +113,34 @@ public class Response : Message {
 
 
 	public void Write(string txt, Encoding? encoding = null) {
-		if (BodyType != null && BodyType != h2tp.BodyType.PlainText) {
+		if (BodyRef.BodyType != BodyType.PlainText) {
 			throw WrittenException;
 		}
 
-		BodyType ??= h2tp.BodyType.PlainText;
+		BodyRef.BodyType = BodyType.PlainText;
 		WriteBytes((encoding ?? Encoding.UTF8).GetBytes(txt).AsSpan());
 	}
 
 	public void Write(StringBuilder sb) => Write(sb.ToString());
 
 	public void WriteJson(object val, JsonSerializerOptions? options = null) {
-		if (BodyType != null) throw WrittenException;
+		if (BodyRef.BodyType != BodyType.None) throw WrittenException;
 
-		BodyType ??= h2tp.BodyType.Json;
+		BodyRef.BodyType = BodyType.Json;
 		EnsureWriteStream();
 		JsonSerializer.Serialize(CompressStream ?? Body, val, options);
 	}
 
-	public void WriteFile(
-		string path,
-		Tuple<long, long>? range = null,
-		bool viaSendFile = false,
-		FileInfo? fileinfo = null
-	) {
-		WriteFile(new FileRef(path, range, viaSendFile, fileinfo));
-	}
-
 	public void WriteFile(FileRef @ref) {
-		if (BodyType != null) throw WrittenException;
-		BodyType ??= h2tp.BodyType.File;
-		FileRef = @ref;
+		if (BodyRef.BodyType != BodyType.None) throw WrittenException;
+		BodyRef.BodyType = BodyType.File;
+		BodyRef.Value = @ref;
 	}
 
 	public void WriteStream(Stream stream) {
-		if (BodyType != null) throw WrittenException;
-
-		BodyType ??= h2tp.BodyType.Stream;
-		Stream = stream;
+		if (BodyRef.BodyType != BodyType.None) throw WrittenException;
+		BodyRef.BodyType = BodyType.Stream;
+		BodyRef.Value = stream;
 	}
 
 	internal new void Reset() {

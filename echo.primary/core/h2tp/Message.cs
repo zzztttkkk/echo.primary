@@ -1,9 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO.Compression;
-using System.Text;
-using System.Text.Json;
-
-namespace echo.primary.core.h2tp;
+﻿namespace echo.primary.core.h2tp;
 
 internal enum MessageReadStatus {
 	None = 0,
@@ -35,7 +30,6 @@ public class Message {
 
 public class FileRef(
 	string filename,
-	Tuple<long, long>? range = null,
 	bool viaSendFile = false,
 	FileInfo? fileInfo = null
 ) {
@@ -44,7 +38,7 @@ public class FileRef(
 	public bool ViaSendFile = viaSendFile;
 }
 
-public enum BodyType {
+internal enum BodyType {
 	None,
 	PlainText,
 	Binary,

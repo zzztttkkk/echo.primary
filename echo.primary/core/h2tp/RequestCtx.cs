@@ -66,41 +66,50 @@ public partial class RequestCtx {
 	internal async Task SendResponse(IAsyncWriter writer) {
 		if (IsCanceled) return;
 
-		if (Response.BodyType != BodyType.None && string.IsNullOrEmpty(Response.Headers.ContentType)) {
-			Response.Headers.ContentType = Response.BodyType switch {
+		var bodyref = Response.BodyRef;
+
+		if (bodyref.BodyType != BodyType.None && string.IsNullOrEmpty(Response.Headers.ContentType)) {
+			Response.Headers.ContentType = bodyref.BodyType switch {
 				BodyType.PlainText => "text/plain",
 				BodyType.Binary => Mime.DefaultMimeType,
 				BodyType.Json => "application/json",
-				BodyType.File => Mime.GetMimeType(Response.FileRef!.Filename),
+				BodyType.File => Mime.GetMimeType(((FileRef)bodyref.Value!).Filename),
 				_ => null
 			};
 		}
 
-		if (Response.FileRef != null) {
-			Response.EnsureWriteStream();
-			await SendFileRef(writer);
-			return;
+		switch (bodyref.BodyType) {
+			case BodyType.File: {
+				Response.EnsureWriteStream();
+				await SendFileRef(writer);
+				return;
+			}
+			case BodyType.Stream: {
+				Response.EnsureWriteStream();
+				await SendStream(writer, (Stream)bodyref.Value!);
+				return;
+			}
+			case BodyType.None:
+			case BodyType.PlainText:
+			case BodyType.Binary:
+			case BodyType.Json:
+			default: {
+				if (Response.CompressStream != null) {
+					await Response.CompressStream.FlushAsync();
+				}
+
+				Response.Headers.ContentLength = Response.Body.Position;
+
+				await SendHeader(writer);
+
+				if (Response.Body.Position > 0) {
+					await writer.Write(Response.BodyBuffer);
+				}
+
+				await writer.Flush();
+				break;
+			}
 		}
-
-		if (Response.Stream != null) {
-			Response.EnsureWriteStream();
-			await SendStream(writer, Response.Stream);
-			return;
-		}
-
-		if (Response.CompressStream != null) {
-			await Response.CompressStream.FlushAsync();
-		}
-
-		Response.Headers.ContentLength = Response.Body.Position;
-
-		await SendHeader(writer);
-
-		if (Response.Body.Position > 0) {
-			await writer.Write(Response.BodyBuffer);
-		}
-
-		await writer.Flush();
 	}
 
 	public delegate void ConnUpgradeFunc(TcpConnection connection, ExtAsyncReader reader, MemoryStream tmp);
