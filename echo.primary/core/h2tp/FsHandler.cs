@@ -21,6 +21,11 @@ public class FsOptions {
 
 	[Toml(Optional = true)] public bool PreferZeroCopy { get; set; } = false;
 
+	[Toml(Optional = true)] public bool AllowWrite { get; set; } = false;
+
+	[Toml(Optional = true)] public string UploadSecretKey { get; set; } = "";
+
+	[Toml(Optional = true)] public string DeleteSecretKey { get; set; } = "";
 	[Toml(Ignored = true)] public FsHandler.PreCheckFunc? PreCheckFunc { get; set; } = null;
 	[Toml(Ignored = true)] public FsHandler.IndexRenderFunc? IndexRenderFunc { get; set; } = null;
 	[Toml(Ignored = true)] public FsHandler.ETagMakeFunc? ETagMakeFunc { get; set; } = null;
@@ -28,7 +33,7 @@ public class FsOptions {
 	[Toml(Ignored = true)] public FsHandler.ETagEqualFunc? ETagEqualFunc { get; set; } = null;
 }
 
-public class FsHandler(FsOptions opts) : IHandler {
+public partial class FsHandler(FsOptions opts) : IHandler {
 	public delegate Task<bool> PreCheckFunc(RequestCtx ctx, FileSystemInfo info);
 
 	public delegate Task IndexRenderFunc(FsHandler handler, RequestCtx ctx, DirectoryInfo dir);
@@ -197,6 +202,10 @@ public class FsHandler(FsOptions opts) : IHandler {
 		return new(begin, end);
 	}
 
+	private partial Task HandleUpload(RequestCtx ctx, string path);
+
+	private partial Task HandleDelete(RequestCtx ctx, string path);
+
 	public async Task Handle(RequestCtx ctx) {
 		var path = ctx.Request.Uri.Path;
 		if (string.IsNullOrEmpty(path) || !path.StartsWith(opts.Prefix)) {
@@ -211,6 +220,23 @@ public class FsHandler(FsOptions opts) : IHandler {
 		}
 
 		path = $"{_root.FullName}{path}";
+
+		switch (ctx.Request.Method) {
+			case "PUT": {
+				await HandleUpload(ctx, path);
+				return;
+			}
+			case "DELETE": {
+				await HandleDelete(ctx, path);
+				return;
+			}
+		}
+
+		if (!ctx.Request.IsGet || !ctx.Request.IsHead) {
+			ctx.Response.StatusCode = (int)RfcStatusCode.MethodNotAllowed;
+			return;
+		}
+
 		FileSystemInfo filesysinfo;
 		if (path.EndsWith('/') || path.EndsWith('\\')) {
 			filesysinfo = new DirectoryInfo(path);
@@ -237,7 +263,6 @@ public class FsHandler(FsOptions opts) : IHandler {
 
 		var lwt = filesysinfo.LastWriteTime;
 		ctx.Response.Headers.Set(RfcHeader.LastModified, lwt.ToString("R"));
-
 		string? etag = null;
 		if (opts.ETagMakeFunc != null) {
 			etag = await opts.ETagMakeFunc(filesysinfo);
@@ -260,6 +285,12 @@ public class FsHandler(FsOptions opts) : IHandler {
 			ctx.Response.NoCompression = true;
 			await (opts.IndexRenderFunc ?? DefaultIndexRender)(this, ctx, (DirectoryInfo)filesysinfo);
 			return;
+		}
+
+		var ranges = ctx.Request.Headers.GetAll(RfcHeader.Range);
+		if (ranges != null && (ctx.Request.IsGet || ctx.Request.IsHead)) {
+			var ir = ctx.Request.Headers.GetFirst(RfcHeader.IfRange);
+			if (!string.IsNullOrEmpty(ir)) { }
 		}
 
 		var fileinfo = (FileInfo)filesysinfo;

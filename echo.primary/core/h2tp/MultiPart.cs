@@ -9,8 +9,9 @@ public class MultiPart {
 		return "";
 	}
 
-	public async Task WriteBegin(IAsyncWriter dst, string[]? headers = null) {
+	public delegate void WriteLineCall();
+
+	public async Task WriteHeader(IAsyncWriter dst, string[]? headers = null) {
 		boundary ??= GenBoundary();
-		
 	}
 }

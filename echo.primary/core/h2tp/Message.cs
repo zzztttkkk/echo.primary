@@ -30,12 +30,14 @@ public class Message {
 
 public class FileRef(
 	string filename,
+	long[]? ranges = null,
 	bool viaSendFile = false,
 	FileInfo? fileInfo = null
 ) {
 	public readonly string Filename = filename;
 	public readonly FileInfo FileInfo = fileInfo ?? new(filename);
 	public bool ViaSendFile = viaSendFile;
+	public long[]? Ranges = ranges;
 }
 
 internal enum BodyType {
