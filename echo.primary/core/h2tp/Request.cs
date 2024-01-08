@@ -15,7 +15,7 @@ public class Request : Message {
 			if (InnerUri != null) return InnerUri;
 
 			var (v, e) = Uri.Parse(Flps[1]);
-			if (e != null) throw e;
+			if (e != null) throw new Exception(e);
 			InnerUri = v!;
 			return InnerUri;
 		}

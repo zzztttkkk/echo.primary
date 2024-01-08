@@ -141,13 +141,28 @@ public class Version1Protocol(IHandler handler, HttpOptions options) : ITcpProto
 						break;
 					}
 
+					var isConnect = ctx.Request.IsConnect;
+
 					var (uri, exc) = Uri.Parse(
 						Encoding.Latin1.GetString(readTmp.GetBuffer().AsSpan()[..(int)(readTmp.Position - 1)]),
-						AllowAuthority: ctx.Request.IsConnect
+						allowAuthority: isConnect
 					);
 					if (exc != null) {
-						CloseWithException(exc.Message);
+						CloseWithException(exc);
 						break;
+					}
+
+					if (isConnect) {
+						if (string.IsNullOrEmpty(uri!.Path)) {
+							CloseWithException("empty path");
+							break;
+						}
+					}
+					else {
+						if (string.IsNullOrEmpty(uri!.Host)) {
+							CloseWithException("empty host");
+							break;
+						}
 					}
 
 					ctx.Request.InnerUri = uri;

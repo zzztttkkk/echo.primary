@@ -4,6 +4,7 @@ namespace echo.primary.utils;
 
 public static class Hex {
 	private static readonly byte[] HexTable = new byte[512];
+	internal static readonly byte[] HexIntTable = new byte[256];
 
 	private static readonly InitFunc _ = new(() => {
 		var digits = "0123456789ABCDEF"u8.ToArray();
@@ -15,6 +16,18 @@ public static class Hex {
 				HexTable[i] = x;
 				i++;
 			}
+		}
+
+		foreach (var c in "0123456789") {
+			HexIntTable[c] = (byte)(c - '0');
+		}
+
+		foreach (var c in "abcdef") {
+			HexIntTable[c] = (byte)(c - 'a');
+		}
+
+		foreach (var c in "ABCDEF") {
+			HexIntTable[c] = (byte)(c - 'A');
 		}
 	});
 
