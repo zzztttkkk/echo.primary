@@ -13,7 +13,7 @@ public static class Mime {
 	private const string QuestionMark = "?";
 	public const string DefaultMimeType = "application/octet-stream";
 
-	private static readonly Lazy<IDictionary<string, string>> _mappings = new(BuildMappings);
+	private static readonly Lazy<IDictionary<string, string>> Mappings = new(BuildMappings);
 
 	private static IDictionary<string, string> BuildMappings() {
 		var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
@@ -693,7 +693,7 @@ public static class Mime {
 		}
 
 
-		if (str.StartsWith(Dot)) return _mappings.Value.TryGetValue(str.ToLower(), out mimeType!);
+		if (str.StartsWith(Dot)) return Mappings.Value.TryGetValue(str.ToLower(), out mimeType!);
 
 		var index = str.LastIndexOf(Dot, StringComparison.Ordinal);
 		if (index != -1 && str.Length > index + 1) {
@@ -702,7 +702,7 @@ public static class Mime {
 
 		str = Dot + str;
 
-		return _mappings.Value.TryGetValue(str.ToLower(), out mimeType!);
+		return Mappings.Value.TryGetValue(str.ToLower(), out mimeType!);
 	}
 
 	public static string GetMimeType(string str) {
@@ -714,7 +714,7 @@ public static class Mime {
 			throw new ArgumentException("Requested mime type is not valid: " + mimeType);
 		}
 
-		if (_mappings.Value.TryGetValue(mimeType, out var extension)) {
+		if (Mappings.Value.TryGetValue(mimeType, out var extension)) {
 			return extension;
 		}
 
