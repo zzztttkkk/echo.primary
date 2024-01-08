@@ -33,6 +33,34 @@ public class Uri(string raw) {
 	public string? QueryString { get; set; }
 	public string? Fragment { get; set; }
 
+	public MultiMap? Query {
+		get {
+			if (string.IsNullOrEmpty(QueryString)) return null;
+			var m = new MultiMap();
+
+			var remain = QueryString!;
+
+			while (true) {
+				string pair;
+				var idx = remain.IndexOf('&');
+				if (idx > -1) {
+					pair = remain[..idx];
+					remain = remain[(idx + 1)..];
+				}
+				else {
+					pair = remain;
+					remain = string.Empty;
+				}
+
+				idx = pair.IndexOf('=');
+				m.Add(Unescape(pair[..idx]), idx > -1 ? Unescape(pair[(idx + 1)..]) : string.Empty);
+				if (string.IsNullOrEmpty(remain)) break;
+			}
+
+			return m;
+		}
+	}
+
 	public string? Username {
 		get => Authority?.Username;
 		set {
@@ -284,8 +312,13 @@ public class Uri(string raw) {
 		return (obj, null);
 	}
 
-	public static string Unescape(string v) {
-		if (!v.Contains('%')) return v;
+	public static string Unescape(string v, bool allowPlus = true) {
+		if (allowPlus) {
+			if (!v.Contains('%')) return v;
+		}
+		else if (v.IndexOfAny(['%', '+']) < 0) {
+			return v;
+		}
 
 		var sb = new StringBuilder(v.Length);
 		var view = v.AsSpan();
@@ -299,7 +332,7 @@ public class Uri(string raw) {
 					break;
 				}
 				case '+': {
-					sb.Append((byte)' ');
+					sb.Append(allowPlus ? (byte)'+' : (byte)' ');
 					break;
 				}
 				default: {
